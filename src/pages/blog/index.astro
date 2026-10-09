@@ -1,0 +1,393 @@
+---
+import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+import Header from '../../components/Header.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
+import '@fontsource/anton';
+import '@fontsource/roboto-mono';
+import { ArrowUpRight, Search } from '@lucide/astro'
+
+const posts = (await getCollection('blog')).sort(
+    (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+
+
+// 將最新文章獨立出來：第一篇為 latestPost，其餘為 otherPosts
+const latestPost = posts[0];
+const otherPosts = posts.slice(1);
+
+// 統計每個 tag 出現次數（包含 latestPost），取前 5
+const tagCount = new Map<string, number>();
+for (const post of posts) {
+    for (const tag of post.data.tags) {
+        const key = tag.trim().toLowerCase();
+        tagCount.set(key, (tagCount.get(key) ?? 0) + 1);
+    }
+}
+const topTags = [...tagCount.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, 5)
+    .map(([tag]) => tag);
+
+// 篩選與搜尋用的資料
+const tagsOf = (post: (typeof posts)[number]) =>
+    post.data.tags.map((t) => t.trim().toLowerCase()).join('|');
+
+const searchTextOf = (post: (typeof posts)[number]) =>
+    [post.data.title, post.data.description, ...post.data.tags].join(' ').toLowerCase();
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+    </head>
+    <body class="font-['anton'] bg-[#F5F3ED] dark:bg-[#0F172A] text-neutral-900 dark:text-neutral-100 transition-colors duration-300">
+        <div class="px-6 md:px-12 py-12">
+            <Header />
+            <main class="mx-auto w-full max-w-[1200px] space-y-12 mt-8">
+
+                <!-- 頂部標題列 -->
+                <div class="flex font-['roboto_mono'] justify-between items-center border-b border-black/20 dark:border-white/20 pb-4 text-xs tracking-wider">
+                    <span>02 / EDITORIAL & ARTICLES</span>
+                    <span class="text-[#6600FF]">BLOG ARCHIVE</span>
+                </div>
+
+                {/* 1. 最新文章獨立區塊 (Featured / Latest Edition) */}
+                {latestPost && (
+                    <section>
+                        <a
+                            href={`/blog/${latestPost.id}/`}
+                            class="group grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 sm:p-8"
+                        >
+                            {/* 大封面圖 */}
+                            {latestPost.data.heroImage ? (
+                                <div class="lg:col-span-7 h-[280px] sm:h-[360px] overflow-hidden bg-gray-100 dark:bg-neutral-800 border border-black/10 dark:border-white/10">
+                                    <Image
+                                        width={1020}
+                                        height={510}
+                                        src={latestPost.data.heroImage}
+                                        alt=""
+                                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                    />
+                                </div>
+                            ) : (
+                                <div class="lg:col-span-7 h-[280px] sm:h-[360px] bg-gray-100 dark:bg-neutral-800 border border-black/10 dark:border-white/10 flex items-center justify-center text-xs text-neutral-400 font-['Roboto_Mono']">
+                                    NO IMAGE
+                                </div>
+                            )}
+
+                            {/* 文章資訊 */}
+                            <div class="lg:col-span-5 flex flex-col justify-between space-y-4">
+                                <div class="space-y-3">
+                                    <p class="text-xs text-[#6600FF] font-bold uppercase tracking-wider">
+                                        <FormattedDate date={latestPost.data.pubDate} />
+                                    </p>
+                                    <h1 class="font-['anton'] text-3xl sm:text-6xl uppercase tracking-wide group-hover:text-[#6600FF] transition-colors leading-tight">
+                                        {latestPost.data.title}
+                                    </h1>
+                                    {latestPost.data.description && (
+                                        <p class="font-['cormorant_garamond'] italic text-sm text-neutral-600 dark:text-neutral-400 line-clamp-3 leading-relaxed">
+                                            {latestPost.data.description}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div class="pt-4 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-neutral-100 group-hover:text-[#6600FF]">
+                                    <span>Read Cover Story</span>
+                                    <span aria-hidden="true" class="transform group-hover:translate-x-1 transition-transform"><ArrowUpRight width={12} height={12} /></span>
+                                </div>
+                            </div>
+                        </a>
+                    </section>
+                )}
+
+
+                {/* 2. 其餘文章列表網格與分頁 */}
+                {otherPosts.length > 0 && (
+                    <section class="pb-12 space-y-6 grid gap-y-4">
+                        <div class="font-['roboto_mono'] grid gap-y-2 text-xs uppercase tracking-wider text-neutral-500 border-b border-black/80 dark:border-[#F5F3ED] pb-2">
+                            <div class="flex items-center justify-between">
+                                <span>Previous Archives ({otherPosts.length})</span>
+                                <span class="text-[#6600FF]">02 / SELECTED</span>
+                            </div>
+                            <h1 class="text-5xl sm:text-7xl text-black font-['anton'] tracking-tight dark:text-white">
+                                Articles
+                            </h1>
+                            <div class="h-[2px] w-6 bg-[#6600FF]"></div>
+                        </div>
+
+                        {/* Search */}
+                        <div class="relative max-w-[420px]">
+                            <Search
+                                width={14}
+                                height={14}
+                                class="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-neutral-500"
+                            />
+                            <input
+                                id="post-search"
+                                type="search"
+                                autocomplete="off"
+                                placeholder="SEARCH TITLE / TAG"
+                                aria-label="搜尋文章"
+                                class="w-full border-b border-black/80 bg-transparent py-2 pl-8 pr-2 font-['roboto_mono'] text-[11px] tracking-wider placeholder:text-neutral-400 focus:border-[#6600FF] focus:outline-none"
+                            />
+                        </div>
+
+                        {/* Top 5 Tag Radio */}
+                        {topTags.length > 0 && (
+                            <fieldset class="flex flex-wrap items-center gap-3 px-2 font-['roboto_mono'] text-[10px] uppercase tracking-wider">
+                                <legend class="sr-only">依標籤篩選文章</legend>
+
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="tag-filter" value="all" class="peer sr-only" checked />
+                                    <span class="block rotate-[-4deg] -skew-x-12 px-4 py-1 transition-colors hover:border-[#6600FF] hover:text-[#6600FF] peer-checked:border-[#6600FF] peer-checked:bg-[#6600FF] peer-checked:text-white peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#6600FF]">
+                                        <span class="block" style="transform: skewX(12deg) rotate(4deg);">ALL</span>
+                                    </span>
+                                </label>
+
+                                {topTags.map((tag) => (
+                                    <label class="cursor-pointer">
+                                        <input type="radio" name="tag-filter" value={tag} class="peer sr-only" />
+                                        <span class="block rotate-[-4deg] -skew-x-12 px-4 py-1 transition-colors hover:border-[#6600FF] hover:text-[#6600FF] peer-checked:border-[#6600FF] peer-checked:bg-[#6600FF] peer-checked:text-white peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#6600FF]">
+                                            <span class="block" style="transform: skewX(12deg) rotate(4deg);">#{tag}</span>
+                                        </span>
+                                    </label>
+                                ))}
+                            </fieldset>
+                        )}
+
+                        {/* 文章列表 */}
+                        <ul class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                            {otherPosts.map((post, index) => {
+                                const rotateClass = index % 2 === 0 ? 'rotate-[-2deg]' : 'rotate-[2deg]';
+                                const hoverRotate = 'hover:rotate-0';
+
+                                return (
+                                    <li
+                                        data-post
+                                        data-tags={tagsOf(post)}
+                                        data-search={searchTextOf(post)}
+                                        class={`transition-all duration-300 hover:-translate-y-1 ${rotateClass} ${hoverRotate}`}
+                                    >
+                                        <a
+                                            href={`/blog/${post.id}/`}
+                                            class="group flex flex-col p-4 h-full bg-white/50 border border-black/10 shadow-sm transition-all duration-300 hover:bg-white hover:shadow-lg hover:border-[#6600FF]"
+                                        >
+                                            {post.data.heroImage ? (
+                                                <div class="w-full h-[200px] overflow-hidden bg-gray-100 dark:bg-neutral-800 border border-black/10 dark:border-white/10 mb-4">
+                                                    <Image
+                                                        width={720}
+                                                        height={360}
+                                                        src={post.data.heroImage}
+                                                        alt=""
+                                                        class="w-full h-full object-cover  group-hover:scale-105 transition-all duration-500"
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <div class="w-full h-[200px] bg-gray-100 dark:bg-neutral-800 border border-black/10 dark:border-white/10 flex items-center justify-center text-xs text-neutral-400 dark:text-neutral-500 mb-4 font-['Roboto_Mono']">
+                                                    NO IMAGE
+                                                </div>
+                                            )}
+
+                                            <div class="mb-2 flex items-center justify-between font-['roboto_mono'] text-[10px] font-bold uppercase tracking-wider">
+                                                <span class="text-[#6600FF]">
+                                                    <FormattedDate date={post.data.pubDate} />
+                                                </span>
+                                                <span class="text-neutral-400 transition-colors group-hover:text-[#6600FF]">
+                                                    {String(index + 1).padStart(2, '0')}
+                                                </span>
+                                            </div>
+
+                                            <h2 class="font-['Anton'] text-2xl uppercase tracking-wide group-hover:text-[#6600FF] transition-colors line-clamp-2">
+                                                {post.data.title}
+                                            </h2>
+
+                                            <span class="mt-2 font-['cormorant_garamond'] italic text-sm text-neutral-600 line-clamp-3">
+                                                {post.data.description}
+                                            </span>
+
+                                            <div class="mt-auto pt-6 flex items-center justify-between font-['roboto_mono'] text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 group-hover:text-[#6600FF]">
+                                                <span class="border-b border-transparent group-hover:border-[#6600FF] transition-colors">
+                                                    Read Article
+                                                </span>
+                                                <span aria-hidden="true" class="transform group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform">
+                                                    <ArrowUpRight width={12} height={12} />
+                                                </span>
+                                            </div>
+                                        </a>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+
+                        {/* 分頁按鈕容器 */}
+                        <nav id="pagination-controls" aria-label="文章分頁" class="flex items-center justify-center gap-2 pt-8 font-['roboto_mono'] text-xs">
+                            <!-- 動態由 JS 生成 -->
+                        </nav>
+
+                        <p
+                            id="empty-state"
+                            class="hidden py-12 text-center font-['roboto_mono'] text-xs uppercase tracking-wider text-neutral-500"
+                        >
+                            No articles found.
+                        </p>
+                    </section>
+                )}
+            </main>
+        </div>
+        <Footer />
+    </body>
+</html>
+
+<script>
+    const radios = document.querySelectorAll<HTMLInputElement>('input[name="tag-filter"]')
+    const searchInput = document.getElementById('post-search') as HTMLInputElement | null
+    const items = document.querySelectorAll<HTMLElement>('[data-post]')
+    const emptyState = document.getElementById('empty-state')
+    const paginationContainer = document.getElementById('pagination-controls')
+
+    const PAGE_SIZE = 6
+    let currentPage = 1
+
+    function applyFilter() {
+        const selected =
+            document.querySelector<HTMLInputElement>('input[name="tag-filter"]:checked')?.value ?? 'all'
+        const terms = (searchInput?.value ?? '').trim().toLowerCase().split(/\s+/).filter(Boolean)
+
+        // 1. 先篩選出符合條件的元素
+        const matchedItems: HTMLElement[] = []
+        items.forEach((el) => {
+            const tags = (el.dataset.tags ?? '').split('|')
+            const text = el.dataset.search ?? ''
+
+            const matchTag = selected === 'all' || tags.includes(selected)
+            const matchText = terms.every((t) => text.includes(t))
+            const show = matchTag && matchText
+
+            if (show) {
+                matchedItems.push(el)
+            } else {
+                el.classList.add('hidden')
+            }
+        })
+
+        const totalMatched = matchedItems.length
+        const totalPages = Math.ceil(totalMatched / PAGE_SIZE) || 1
+
+        // 確保當前頁碼不超過總頁數
+        if (currentPage > totalPages) {
+            currentPage = 1
+        }
+
+        // 2. 處理分頁顯示
+        const startIndex = (currentPage - 1) * PAGE_SIZE
+        const endIndex = startIndex + PAGE_SIZE
+
+        matchedItems.forEach((el, index) => {
+            if (index >= startIndex && index < endIndex) {
+                el.classList.remove('hidden')
+            } else {
+                el.classList.add('hidden')
+            }
+        })
+
+        // 3. 渲染分頁按鈕
+        renderPagination(totalPages)
+
+        // 4. 顯示或隱藏無資料狀態
+        emptyState?.classList.toggle('hidden', totalMatched > 0)
+        if (paginationContainer) {
+            paginationContainer.classList.toggle('hidden', totalPages <= 1)
+        }
+    }
+
+    function renderPagination(totalPages: number) {
+        if (!paginationContainer) return
+        if (totalPages <= 1) {
+            paginationContainer.innerHTML = ''
+            return
+        }
+
+        let html = ''
+
+        // 上一頁按鈕
+        html += `
+            <button 
+                type="button" 
+                data-page="${currentPage - 1}" 
+                class="px-3.5 py-2 uppercase tracking-wider transition-colors hover:border-[#6600FF] hover:text-[#6600FF] disabled:opacity-30 disabled:cursor-not-allowed"
+                ${currentPage === 1 ? 'disabled' : ''}
+            >
+                ← PREV
+            </button>
+        `
+
+        // 頁碼按鈕（套用與上方標籤一致的微傾斜率與主題色風格）
+        for (let i = 1; i <= totalPages; i++) {
+            const isActive = i === currentPage
+            const activeClass = isActive
+                ? 'bg-[#6600FF] text-white border-[#6600FF]'
+                : 'border-black/20 dark:border-white/20 hover:border-[#6600FF] hover:text-[#6600FF]'
+            
+            html += `
+                <button 
+                    type="button" 
+                    data-page="${i}" 
+                    class="block rotate-[-12deg] -skew-x-12 px-4 py-1 transition-colors hover:border-[#6600FF] hover:text-[#6600FF] peer-checked:border-[#6600FF] peer-checked:bg-[#6600FF] peer-checked:text-white peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#6600FF] ${activeClass}"
+                >
+                    <span class="block" style="transform: skewX(12deg) rotate(13deg);">${i}</span>
+                </button>
+            `
+        }
+
+        // 下一頁按鈕
+        html += `
+            <button 
+                type="button" 
+                data-page="${currentPage + 1}" 
+                class="px-3.5 py-2 uppercase tracking-wider transition-colors hover:border-[#6600FF] hover:text-[#6600FF] disabled:opacity-30 disabled:cursor-not-allowed"
+                ${currentPage === totalPages ? 'disabled' : ''}
+            >
+                NEXT →
+            </button>
+        `
+
+        paginationContainer.innerHTML = html
+
+        // 綁定分頁點擊事件
+        paginationContainer.querySelectorAll('button[data-page]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const targetPage = parseInt(btn.getAttribute('data-page') ?? '1', 10)
+                if (!isNaN(targetPage)) {
+                    currentPage = targetPage
+                    applyFilter()
+                    // 點擊後平滑滾動回文章列表頂部
+                    document.getElementById('post-search')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+                }
+            })
+        })
+    }
+
+    // 事件監聽
+    radios.forEach((radio) => radio.addEventListener('change', () => {
+        currentPage = 1
+        applyFilter()
+    }))
+
+    searchInput?.addEventListener('input', (e) => {
+        if ((e as InputEvent).isComposing) return
+        currentPage = 1
+        applyFilter()
+    })
+    searchInput?.addEventListener('compositionend', () => {
+        currentPage = 1
+        applyFilter()
+    })
+
+    // 初始化執行一次
+    applyFilter()
+</script>

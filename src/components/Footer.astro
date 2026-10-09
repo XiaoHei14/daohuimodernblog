@@ -1,0 +1,65 @@
+---
+const today = new Date();
+import { ArrowUp } from "@lucide/astro";
+import "@fontsource/roboto-mono";
+import "@fontsource/cormorant-garamond";
+
+const menuItems = [
+    { number: '01', label: 'HOME', href: '/' },
+    { number: '02', label: 'ABOUT', href: '/about' },
+    { number: '03', label: 'BLOG', href: '/blog' },
+    { number: '04', label: 'FRIEND', href: '/friend' },
+]
+
+---
+
+<footer
+	class="w-full bg-[#DDF1FF] border-t border-black/15 py-12 px-6 md:px-12 font-['roboto-mono',monospace] text-neutral-900"
+>
+	<div
+		class="max-w-[1020px] mx-auto flex flex-col md:flex-row justify-between items-start md:items-end gap-8 pb-8 border-b border-black/10"
+	>
+		<!-- 左側大型標語 -->
+		<div class="space-y-2">
+			<h2 class="text-3xl md:text-5xl font-extrabold tracking-tight">
+				SEE YOU AROUND.
+			</h2>
+			<span class="text-2xl italic font-['cormorant-garamond']">
+				Chodan
+			</span>
+			<br/>
+			<span class="text-sm font-['roboto-mono']">A LITTLE STYLE. A LITTLE LIFE.</span>
+		</div>
+
+		<!-- 右側:手機版佔滿寬度,桌機版靠右 -->
+		<div class="grid gap-y-6 w-full md:w-auto justify-items-start md:justify-items-end">
+			<!-- 返回頂部按鈕 -->
+			<a href="#top" class="group grid justify-items-center gap-2">
+				<span
+					class="w-7 h-7 flex items-center justify-center text-[#6600FF] transition-transform duration-300 group-hover:-translate-y-1"
+				>
+					<ArrowUp class="w-4 h-4" />
+				</span>
+				<span class="text-xs font-bold uppercase tracking-wider">BACK TO TOP</span>
+			</a>
+
+			<!-- 選單:手機版可換行,間距用 gap 取代 mx-2 -->
+			<nav aria-label="Footer" class="flex flex-wrap gap-x-4 gap-y-2 text-sm md:justify-end">
+				{menuItems.map((item) => (
+					<a href={item.href}>
+						{item.label}
+					</a>
+				))}
+			</nav>
+		</div>
+	</div>
+
+	<!-- 底部版權宣告 -->
+	<div
+		class="max-w-[1020px] mx-auto pt-6 flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs text-neutral-400 gap-4"
+	>
+		<p>&copy; {today.getFullYear()} Your Name Here. All rights reserved.</p>
+
+		<div class="flex items-center gap-2"></div>
+	</div>
+</footer>

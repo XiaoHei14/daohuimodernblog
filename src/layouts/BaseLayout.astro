@@ -1,0 +1,23 @@
+---
+import '../styles/global.css'
+import Header from '../components/Header.astro'
+import BaseHead from '../components/BaseHead.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+
+---
+
+<!doctype html>
+<html lang="zh-TW">
+	<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION}/>
+    <body>
+
+        <main>
+        <slot />
+        </main>
+
+        <!-- 共用頁尾 -->
+        <footer class="bottom-0">
+        <p>&copy; {new Date().getFullYear()} DaoHui Website. All rights reserved.</p>
+        </footer>
+    </body>
+</html>

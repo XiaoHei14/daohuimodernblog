@@ -1,0 +1,209 @@
+---
+import { getCollection, render } from 'astro:content';
+import '@fontsource/anton';
+import '@fontsource/roboto-mono';
+import FriendPolaroidCard from '../../components/FriendPolaroidCard.astro';
+import BaseHead from '../../components/BaseHead.astro';
+import Header from '../../components/Header.astro';
+import { X } from '@lucide/astro';
+
+const friends = await getCollection('friend');
+
+// 預先將每個 friend 的 Markdown 內容在伺服器端渲染好供彈窗使用
+const friendsWithContent = await Promise.all(
+    friends.map(async (friend) => {
+        const { Content } = await render(friend);
+        return { ...friend, Content };
+    })
+);
+---
+
+<BaseHead title="Friends - DaoHui Blog" description="友站"/>
+
+<body class=" h-scren bg-[#F5F3ED]">
+<div class="px-6 md:px-12 py-12 font-['roboto_mono']">
+    <Header />
+    <div class="mx-auto w-full max-w-[1200px] space-y-10 mt-8">
+        
+        <!-- 頂部標題 -->
+        <div class="flex justify-between items-center border-b border-black/20 pb-4 text-xs uppercase tracking-wider">
+            <span>04 / FRIENDS & CONNECTIONS</span>
+            <span class="text-[#6600FF]">NETWORK DIRECTORY</span>
+        </div>
+
+        <h1 class="font-['Anton'] text-5xl sm:text-7xl uppercase tracking-tight">
+            Friends
+        </h1>
+
+        <!-- 列表網格 (改成 button 以觸發彈窗) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {
+                friendsWithContent.map((friend, index) => (
+                    <button 
+                        type="button"
+                        data-modal-target={`modal-${friend.id}`}
+                        class="group flex flex-col items-center text-center gap-6 cursor-pointer"
+                    >
+                        <!-- 拍立得圖片 (若有設定 heroImage 則顯示) -->
+                        {friend.data.heroImage ? (
+                            <div class={`transform duration-300 pointer-events-none ${index % 2 === 0 ? 'rotate-[-4deg]' : 'rotate-[4deg]'}`}>
+                                <FriendPolaroidCard image={friend.data.heroImage} />
+                            </div>
+                        ) : (
+                            <div class="w-[150px] h-[168px] bg-gray-100 flex items-center justify-center text-xs text-neutral-400 font-['roboto_mono']">
+                                NO IMAGE
+                            </div>
+                        )}
+
+                        <!-- 名字與標籤 -->
+                        <div class="w-full flex flex-col gap-1">
+                            <span class="text-[10px] text-[#6600FF] font-light tracking-wider">PROFILE</span>
+                            <h2 class="font-['roboto_mono'] font-light leading-none text-3xl uppercase tracking-wide group-hover:text-[#6600FF] transition-colors">
+                                {friend.data.name}
+                            </h2>
+                        </div>
+                    </button>
+                ))
+            }
+        </div>
+    </div>
+</div>
+</body>
+
+<!-- 彈窗渲染區 (Modal Containers) -->
+{
+    friendsWithContent.map((friend) => {
+        const { Content } = friend;
+        return (
+            <div 
+                id={`modal-${friend.id}`}
+                class="friend-modal fixed inset-0 z-50 flex items-center justify-center p-4 hidden"
+                style="backdrop-filter: blur(4px); opacity: 0;"
+            >
+                {/* 拍立得風格的大彈窗本體 */}
+                <div class="modal-content bg-white w-full max-w-xl max-h-[85vh] overflow-y-auto p-6 sm:p-8 pb-12 border-2 border-black shadow-2xl relative rotate-1 opacity-0 scale-90">
+                    
+
+					<div
+						class="mb-2 flex items-center justify-between px-1 font-['roboto_mono'] text-[9px] text-[#6600FF] font-bold"
+					>
+						<span>ANOTHER SIDE</span>
+						{/* 關閉按鈕 */}
+						<button 
+							type="button"
+							class="modal-close absolute top-4 right-4 p-2 text-neutral-600 hover:text-[#6600FF] transition-colors cursor-pointer z-10 bg-white/80 rounded-full"
+							aria-label="Close modal"
+						>
+							<X class="w-6 h-6" />
+						</button>
+					</div>
+                    {/* 如果友人有設定圖片，可以在彈窗內搭配顯示拍立得照片 */}
+                    {friend.data.heroImage && (
+                        <div class="mb-6 bg-white p-3 max-w-[200px] mx-auto sm:mx-0">
+                            <div class="h-[200px] w-full overflow-hidden bg-gray-200">
+                                <img
+                                    src={friend.data.heroImage.src}
+                                    alt={friend.data.name}
+                                    class="h-full w-full object-cover"
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 彈窗頂部：名字與連結 */}
+                    <div class="space-y-3 pr-8 mb-6 border-b border-black/10 pb-4">
+                        <span class="text-[10px] text-[#6600FF] font-bold uppercase">POLAROID // {friend.id}</span>
+                        <h2 class="font-['Anton'] text-4xl sm:text-5xl uppercase tracking-tight">{friend.data.name}</h2>
+                        
+                        {friend.data.mediaLink && (
+                            <a 
+                                href={friend.data.mediaLink} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                class="inline-block px-3 py-1 bg-[#6600FF] text-white text-[10px] font-bold uppercase tracking-wider shadow-sm hover:opacity-90 transition-opacity"
+                            >
+                                Visit Site ↗
+                            </a>
+                        )}
+                    </div>
+
+                    {/* 彈窗內文（Markdown） */}
+                    <div class="prose prose-neutral max-w-none font-['roboto_mono'] text-sm leading-relaxed">
+                        <Content />
+                    </div>
+                </div>
+            </div>
+        );
+    })
+}
+<!-- GSAP 動畫與互動控制腳本 -->
+<script>
+    import { gsap } from 'gsap';
+
+    const modalTriggers = document.querySelectorAll('[data-modal-target]');
+    const modals = document.querySelectorAll('.friend-modal');
+
+    modalTriggers.forEach(trigger => {
+        trigger.addEventListener('click', () => {
+            const targetId = trigger.getAttribute('data-modal-target');
+            if (targetId) {
+                const modal = document.getElementById(targetId);
+                if (modal) {
+                    const content = modal.querySelector('.modal-content');
+
+                    // 1. 移除 hidden 讓元素參與排版
+                    modal.classList.remove('hidden');
+
+                    // 2. 背景遮罩淡入
+                    gsap.to(modal, {
+                        opacity: 1,
+                        duration: 0.3,
+                        ease: 'power2.out'
+                    });
+
+                    // 3. 拍立得彈窗本體帶有彈性回彈 (back.out) 的進場動畫
+                    gsap.fromTo(content, 
+                        { scale: 0.9, opacity: 0, y: 20, rotation: 3 }, 
+                        { scale: 1, opacity: 1, y: 0, rotation: 1, duration: 0.45, ease: 'back.out(1.4)', delay: 0.05 }
+                    );
+                }
+            }
+        });
+    });
+
+    modals.forEach(modal => {
+        const closeBtn = modal.querySelector('.modal-close');
+        const content = modal.querySelector('.modal-content');
+
+        const closeModal = () => {
+            // 彈窗本體退場
+            gsap.to(content, {
+                scale: 0.9,
+                opacity: 0,
+                y: 10,
+                duration: 0.25,
+                ease: 'power2.in'
+            });
+
+            // 背景遮罩淡出，結束後加上 hidden
+            gsap.to(modal, {
+                opacity: 0,
+                duration: 0.25,
+                ease: 'power2.in',
+                onComplete: () => {
+                    modal.classList.add('hidden');
+                }
+            });
+        };
+
+        // 點擊關閉按鈕
+        closeBtn?.addEventListener('click', closeModal);
+
+        // 點擊背景遮罩關閉
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+    });
+</script>

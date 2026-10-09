@@ -1,0 +1,22 @@
+---
+import { iban } from 'astro:schema';
+import BaseHead from '../components/BaseHead.astro';
+import HamburgerMenu from '../components/HamburgerMenu.astro'
+import Hexo from '../components/Hexo.astro'
+import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import '../styles/global.css'
+import Whoami from '../components/Whoami.astro';
+import BlogSelect from '../components/BlogSelect.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<!doctype html>
+<html lang="en">
+	<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION}/>
+	<body>
+		<Hexo/>
+		<Whoami/>
+		<BlogSelect/>
+		<Footer />
+	</body>
+</html>
