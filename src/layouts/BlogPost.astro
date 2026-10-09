@@ -7,6 +7,7 @@ import FormattedDate from "../components/FormattedDate.astro";
 import Header from "../components/Header.astro";
 import "@fontsource/anton";
 import "@fontsource/roboto-mono";
+import Giscus from '../components/Giscus.astro';
 
 type Props = CollectionEntry<"blog">["data"] & { minutesRead?: string };
 
@@ -157,13 +158,7 @@ const tagList = Array.isArray(tags) ? tags : tags ? [tags] : [];
 				Top ↑
 			</a>
 		</div>
-		<script src="https://utteranc.es/client.js"
-				repo="XiaoHei14/daohuimodernblog"
-				issue-term="pathname"
-				theme="gruvbox-dark"
-				crossorigin="anonymous"
-				async>
-		</script>
+		<Giscus />
 		<Footer />
 	</body>
 </html>
