@@ -1,0 +1,52 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+import { ArrowLeft, Terminal, AlertTriangle } from '@lucide/astro';
+---
+
+<BaseLayout>
+    <main class="min-h-[80vh] flex items-center justify-center px-6 py-16 font-['roboto_mono',monospace]">
+        <div class="w-full max-w-xl bg-white dark:bg-slate-900 border-2 border-black dark:border-white/30 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.2)] p-8 sm:p-12 relative overflow-hidden">
+            
+            <!-- 裝飾性頂部標籤列 -->
+            <div class="flex justify-between items-center border-b-2 border-black dark:border-white/20 pb-4 mb-8 text-xs font-bold uppercase tracking-wider text-[#6600FF] dark:text-[#a78bfa]">
+                <span class="flex items-center gap-1.5">
+                    <Terminal class="w-4 h-4" /> ERROR_CODE // 404
+                </span>
+                <span class="flex items-center gap-1 text-neutral-500 dark:text-neutral-400">
+                    <AlertTriangle class="w-4 h-4 text-amber-500" /> NOT_FOUND
+                </span>
+            </div>
+
+            <!-- 巨型 404 與標題 -->
+            <div class="space-y-4 mb-8">
+                <h1 class="font-['Anton'] text-7xl sm:text-8xl uppercase tracking-tight text-black dark:text-white leading-none">
+                    404
+                </h1>
+                <h2 class="text-xl sm:text-2xl font-bold uppercase tracking-wide text-neutral-900 dark:text-neutral-100">
+                    此頁面在網路世界中神祕失聯
+                </h2>
+                <p class="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed font-light">
+                    您輸入的網址可能已經被移除、更名，或者它從來就不存在於這條時間線中。請檢查網址或返回安全地帶。
+                </p>
+            </div>
+
+            <!-- 操作按鈕 -->
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-4 border-t border-black/10 dark:border-white/10">
+                <a 
+                    href="/"
+                    class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#6600FF] text-white text-xs font-bold uppercase tracking-wider border-2 border-black dark:border-white/30 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
+                >
+                    <ArrowLeft class="w-4 h-4" /> 返回首頁 (Home)
+                </a>
+                <button
+                    type="button"
+                    onclick="window.history.back()"
+                    class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-slate-800 text-neutral-900 dark:text-neutral-100 text-xs font-bold uppercase tracking-wider border-2 border-black dark:border-white/30 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all cursor-pointer"
+                >
+                    上一頁 (Go Back)
+                </button>
+            </div>
+
+        </div>
+    </main>
+</BaseLayout>
