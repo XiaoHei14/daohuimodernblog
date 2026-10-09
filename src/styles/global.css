@@ -1,1 +1,21 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
+@custom-variant dark (&:where(.dark, .dark *));
+
+body {
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+header,
+footer,
+.card {
+  background-color: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.muted {
+  color: var(--muted);
+}

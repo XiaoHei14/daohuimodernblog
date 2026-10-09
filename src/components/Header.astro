@@ -1,13 +1,17 @@
 ---
-import { SITE_TITLE } from '../consts';
-import HeaderLink from './HeaderLink.astro';
-import HamburgerMenu from './HamburgerMenu.astro';
-import '@fontsource/anton'
+import { SITE_TITLE } from "../consts";
+import HeaderLink from "./HeaderLink.astro";
+import HamburgerMenu from "./HamburgerMenu.astro";
+import "@fontsource/anton";
+import ThemeToggle from "./ThemeToggle.astro";
 ---
 
 <header>
 	<nav class="mx-[48px] py-[22px] flex items-center justify-between">
 		<HeaderLink class="font-['anton'] text-[30px]">{SITE_TITLE}</HeaderLink>
-		<HamburgerMenu />
+		<div class="flex">
+			<ThemeToggle />
+			<HamburgerMenu />
+		</div>
 	</nav>
 </header>

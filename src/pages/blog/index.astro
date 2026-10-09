@@ -17,7 +17,7 @@ const posts = (await getCollection('blog')).sort(
 
 // 將最新文章獨立出來：第一篇為 latestPost，其餘為 otherPosts
 const latestPost = posts[0];
-const otherPosts = posts.slice(1);
+const otherPosts = posts;
 
 // 統計每個 tag 出現次數（包含 latestPost），取前 5
 const tagCount = new Map<string, number>();
@@ -65,7 +65,7 @@ const searchTextOf = (post: (typeof posts)[number]) =>
                         >
                             {/* 大封面圖 */}
                             {latestPost.data.heroImage ? (
-                                <div class="lg:col-span-7 h-[280px] sm:h-[360px] overflow-hidden bg-gray-100 dark:bg-neutral-800 border border-black/10 dark:border-white/10">
+                                <div class="lg:col-span-7 h-[280px] sm:h-[360px] overflow-hidden bg-gray-100 border border-black/10 dark:border-white/10">
                                     <Image
                                         width={1020}
                                         height={510}
@@ -75,7 +75,7 @@ const searchTextOf = (post: (typeof posts)[number]) =>
                                     />
                                 </div>
                             ) : (
-                                <div class="lg:col-span-7 h-[280px] sm:h-[360px] bg-gray-100 dark:bg-neutral-800 border border-black/10 dark:border-white/10 flex items-center justify-center text-xs text-neutral-400 font-['Roboto_Mono']">
+                                <div class="lg:col-span-7 h-[280px] sm:h-[360px] border border-black/10 flex items-center justify-center text-xs text-neutral-400 font-['Roboto_Mono']">
                                     NO IMAGE
                                 </div>
                             )}
@@ -175,10 +175,10 @@ const searchTextOf = (post: (typeof posts)[number]) =>
                                     >
                                         <a
                                             href={`/blog/${post.id}/`}
-                                            class="group flex flex-col p-4 h-full bg-white/50 border border-black/10 shadow-sm transition-all duration-300 hover:bg-white hover:shadow-lg hover:border-[#6600FF]"
+                                            class="group flex flex-col p-4 h-full border border-black/10 shadow-sm transition-all duration-300 hover:bg-white hover:shadow-lg hover:border-[#6600FF]"
                                         >
                                             {post.data.heroImage ? (
-                                                <div class="w-full h-[200px] overflow-hidden bg-gray-100 dark:bg-neutral-800 border border-black/10 dark:border-white/10 mb-4">
+                                                <div class="w-full h-[200px] overflow-hidden  dark:bg-neutral-800 border border-black/10 dark:border-white/10 mb-4">
                                                     <Image
                                                         width={720}
                                                         height={360}

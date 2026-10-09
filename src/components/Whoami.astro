@@ -2,9 +2,11 @@
 import '@fontsource/anton';
 import '@fontsource/roboto-mono';
 import '@fontsource/cormorant-garamond';
+import {ArrowUpRight} from '@lucide/astro';
+
 ---
 
-<section id="whoami" class="bg-[#F5F3ED] min-h-[600px] font-['Roboto_Mono'] text-neutral-900 border-b border-neutral-300">
+<section id="whoami" class="bg-[#F5F3ED] dark:bg-[#0F172A] min-h-[600px] font-['Roboto_Mono'] text-neutral-900 dark:text-[#F5F3ED] border-b border-neutral-300">
     <div class="mx-6 sm:mx-12 py-16 sm:py-20 flex flex-col justify-between h-full">
         <!-- 區塊編號與標題 -->
         <div class="flex justify-between items-center text-xs uppercase tracking-widest text-neutral-500 mb-10">
@@ -22,8 +24,8 @@ import '@fontsource/cormorant-garamond';
                     A passionate high school security enthusiast and developer exploring the depths of binary analysis, cybersecurity challenges, and hardware-software integration.
                 </p>
                 <div data-cta class="invisible pt-2">
-                    <a href="/about" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider border-b border-black pb-1 hover:opacity-75 transition-opacity">
-                        Explore More About Me <span data-arrow class="inline-block">↗</span>
+                    <a href="/about" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider border-b border-black pb-1 hover:opacity-75 transition-opacity ">
+                        Explore More About Me <span data-arrow class="inline-block"><ArrowUpRight width={12} height={12} /></span>
                     </a>
                 </div>
             </div>

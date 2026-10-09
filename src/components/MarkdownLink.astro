@@ -1,0 +1,48 @@
+---
+// src/components/MarkdownLink.astro
+import { getCollection } from "astro:content";
+import FriendPolaroidCard from "./FriendPolaroidCard.astro";
+
+const { href, ...attrs } = Astro.props;
+
+// 檢查是否為 friend 語法 (例如 friend:daohui)
+const isFriend = typeof href === "string" && href.startsWith("friend:");
+const friendId = isFriend ? href.replace("friend:", "") : null;
+
+// 只有 friend 連結才讀取 collection（collection 名稱請依專案調整）
+let friendData: any = null;
+if (friendId) {
+    const friends = await getCollection("friend");
+    friendData =
+        friends.find(
+            (f) =>
+                f.id === friendId ||
+                f.id.replace(/\.(md|mdx)$/, "") === friendId,
+        ) ?? null;
+}
+---
+
+{
+    isFriend && friendData ? (
+        <span class="not-prose mx-1 my-2 inline-block align-middle">
+            <a
+                href={friendData.data.mediaLink || "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="group block w-[150px] no-underline transition-transform hover:scale-105"
+            >
+                {friendData.data.heroImage ? (
+                    <FriendPolaroidCard image={friendData.data.heroImage} />
+                ) : (
+                    <span class="flex h-[200px] w-[150px] items-center justify-center border border-black bg-gray-100 text-xs text-neutral-400">
+                        {friendData.data.name}
+                    </span>
+                )}
+            </a>
+        </span>
+    ) : (
+        <a href={href} {...attrs}>
+            <slot />
+        </a>
+    )
+}

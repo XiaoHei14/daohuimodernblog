@@ -1,23 +1,37 @@
 ---
-import '../styles/global.css'
-import Header from '../components/Header.astro'
-import BaseHead from '../components/BaseHead.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
-
+import "../styles/global.css";
+import Header from "../components/Header.astro";
+import BaseHead from "../components/BaseHead.astro";
+import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
 ---
 
 <!doctype html>
 <html lang="zh-TW">
-	<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION}/>
+    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+    <script is:inline>
+        const theme = (() => {
+            if (
+                typeof localStorage !== "undefined" &&
+                localStorage.getItem("theme")
+            ) {
+                return localStorage.getItem("theme");
+            }
+            if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+                return "dark";
+            }
+            return "light";
+        })();
+
+        if (theme === "dark") {
+            document.documentElement.classList.add("dark");
+        } else {
+            document.documentElement.classList.remove("dark");
+        }
+        window.localStorage.setItem("theme", theme);
+    </script>
     <body>
-
         <main>
-        <slot />
+            <slot />
         </main>
-
-        <!-- 共用頁尾 -->
-        <footer class="bottom-0">
-        <p>&copy; {new Date().getFullYear()} DaoHui Website. All rights reserved.</p>
-        </footer>
     </body>
 </html>

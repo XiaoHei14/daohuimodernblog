@@ -1,0 +1,112 @@
+---
+import { Moon, Sun } from "@lucide/astro";
+---
+
+<div class="flex items-center gap-3">
+  <button
+    type="button"
+    id="astro-theme-switch"
+    aria-label="切換深色模式"
+    aria-pressed="false"
+    class="inline-flex h-10 w-10 items-center justify-center rounded-lg text-gray-700 transition-colors dark:text-yellow-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6600FF]"
+  >
+    <span class="block dark:hidden pointer-events-none">
+      <Sun class="size-5" />
+    </span>
+    <span class="hidden dark:block pointer-events-none">
+      <Moon class="size-5" />
+    </span>
+  </button>
+</div>
+
+<script is:inline>
+  (() => {
+    const STORAGE_KEY = "theme";
+    const DARK_CLASS = "dark";
+
+    function getMode() {
+      return localStorage.getItem(STORAGE_KEY) === "dark"
+        ? "dark"
+        : "light";
+    }
+
+    function applyMode(mode) {
+      const isDark = mode === "dark";
+      document.documentElement.classList.toggle(DARK_CLASS, isDark);
+      document.documentElement.style.colorScheme = mode;
+      localStorage.setItem(STORAGE_KEY, mode);
+
+      const btn = document.getElementById("astro-theme-switch");
+      if (btn) {
+        btn.setAttribute("aria-pressed", String(isDark));
+        btn.setAttribute(
+          "aria-label",
+          isDark ? "切換淺色模式" : "切換深色模式"
+        );
+      }
+    }
+
+    function attachThemeListener() {
+      const btn = document.getElementById("astro-theme-switch");
+      if (!btn || btn.dataset.themeBound === "true") return;
+
+      btn.dataset.themeBound = "true";
+      applyMode(getMode());
+
+      btn.addEventListener("click", async () => {
+        const root = document.documentElement;
+        const nextMode = root.classList.contains(DARK_CLASS)
+          ? "light"
+          : "dark";
+
+        // 支援減少動態效果的使用者設定
+        if (
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+          !document.startViewTransition
+        ) {
+          applyMode(nextMode);
+          return;
+        }
+
+        // 從切換按鈕的位置開始圓形擴散
+        const rect = btn.getBoundingClientRect();
+        const x = rect.left + rect.width / 2;
+        const y = rect.top + rect.height / 2;
+
+        const radius = Math.hypot(
+          Math.max(x, window.innerWidth - x),
+          Math.max(y, window.innerHeight - y)
+        );
+
+        const transition = document.startViewTransition(() => {
+          applyMode(nextMode);
+        });
+
+        try {
+          await transition.ready;
+
+          await document.documentElement.animate(
+            {
+              clipPath: [
+                `circle(0px at ${x}px ${y}px)`,
+                `circle(${radius}px at ${x}px ${y}px)`
+              ]
+            },
+            {
+              duration: 500,
+              easing: "ease-in-out",
+              pseudoElement: "::view-transition-new(root)"
+            }
+          ).finished;
+        } catch {
+          // 動畫失敗時，主題仍然維持已切換的狀態
+        }
+      });
+    }
+
+    // 首次載入與 Astro View Transitions 換頁
+    applyMode(getMode());
+    attachThemeListener();
+    document.addEventListener("astro:page-load", attachThemeListener);
+  })();
+</script>
