@@ -6,7 +6,7 @@ import { defineConfig, fontProviders } from 'astro/config';
 import tailwindcss from "@tailwindcss/vite";
 import { unified } from "@astrojs/markdown-remark";
 import { remarkReadingTime } from './remark-reading-time.mjs';
-import cloudflare from '@astrojs/cloudflare';
+import vercel from "@astrojs/vercel";
 
 
 // https://astro.build/config
@@ -45,6 +45,6 @@ export default defineConfig({
     vite: {
         plugins: [tailwindcss()],
     },
+    adapter: vercel(),
 
-    adapter: cloudflare()
 });
