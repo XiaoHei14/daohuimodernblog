@@ -8,12 +8,13 @@ import '../styles/global.css'
 import Whoami from '../components/Whoami.astro';
 import BlogSelect from '../components/BlogSelect.astro';
 import Footer from '../components/Footer.astro';
+import BANNER from '../assets/websitepaper.jpeg'
 
 ---
 
 <!doctype html>
 <html lang="en">
-	<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION}/>
+	<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} image={BANNER}/>
 	<body>
 		<Hexo/>
 		<Whoami/>
