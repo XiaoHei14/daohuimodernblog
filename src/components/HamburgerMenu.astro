@@ -169,7 +169,7 @@ const menuItems = [
         )
         // 2. 左側介紹與拍立得卡片 (從左下飛入 + 旋轉)
         .fromTo("#menu-overlay section:first-child > *", 
-            { y: 30, opacity: 0, rotate: -8 },
+            { y: 30, opacity: 0, rotate: -8,duration: 0.5, stagger: 0.1, ease: "back.in(1.4)" },
             { y: 0, opacity: 1, rotate: 0, duration: 0.5, stagger: 0.1, ease: "back.out(1.4)" },
             "-=0.3"
         )
