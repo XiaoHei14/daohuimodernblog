@@ -138,23 +138,86 @@ const menuItems = [
 </div>
 
 <script>
-    const openBtn = document.getElementById('menu-open')
-    const closeBtn = document.getElementById('menu-close')
-    const overlay = document.getElementById('menu-overlay')
+    import { gsap } from "gsap";
 
-    function setMenu(open: boolean) {
-        if (!overlay || !openBtn) return
-        overlay.dataset.open = String(open)
-        openBtn.setAttribute('aria-expanded', String(open))
-        document.body.style.overflow = open ? 'hidden' : ''
+    const openBtn = document.getElementById('menu-open');
+    const closeBtn = document.getElementById('menu-close');
+    const overlay = document.getElementById('menu-overlay');
+
+    // 建立 GSAP 時間軸 (預設 pause)
+    const menuTl = gsap.timeline({ 
+        paused: true,
+        onReverseComplete: () => {
+            if (overlay) overlay.dataset.open = "false";
+        }
+    });
+
+    // 初始化動畫設定
+    if (overlay) {
+        // 1. 背景與覆蓋層展現 (clip-path 由右上角圓形展開)
+        menuTl.fromTo(overlay, 
+            { 
+                clipPath: "circle(0% at calc(100% - 48px) 44px)", 
+                opacity: 0 
+            }, 
+            { 
+                clipPath: "circle(150% at calc(100% - 48px) 44px)", 
+                opacity: 1, 
+                duration: 0.6, 
+                ease: "power3.inOut" 
+            }
+        )
+        // 2. 左側介紹與拍立得卡片 (從左下飛入 + 旋轉)
+        .fromTo("#menu-overlay section:first-child > *", 
+            { y: 30, opacity: 0, rotate: -8 },
+            { y: 0, opacity: 1, rotate: 0, duration: 0.5, stagger: 0.1, ease: "back.out(1.4)" },
+            "-=0.3"
+        )
+        // 3. 中間主圖 (淡入 + 微微放大)
+        .fromTo("#menu-overlay section:nth-child(2) img", 
+            { scale: 1.15, opacity: 0 },
+            { scale: 1, opacity: 1, duration: 0.6, ease: "power2.out" },
+            "-=0.4"
+        )
+        // 4. 右側選單連結 (錯開滑入 Stagger)
+        // .fromTo("#menu-overlay .menu-link", 
+        //     { x: 50, opacity: 0 },
+        //     { x: 0, opacity: 1, duration: 0.4, stagger: 0.08, ease: "power3.out" },
+        //     "-=0.4"
+        // )
+        // 5. 關閉按鈕旋轉登場
+        .fromTo("#menu-close", 
+            { rotate: -90, scale: 0, opacity: 0 },
+            { rotate: 0, scale: 1, opacity: 1, duration: 0.3, ease: "back.out(2)" },
+            "-=0.3"
+        );
     }
 
-    openBtn?.addEventListener('click', () => setMenu(true))
-    closeBtn?.addEventListener('click', () => setMenu(false))
+    function toggleMenu(open: boolean) {
+        if (!overlay || !openBtn) return;
+
+        if (open) {
+            overlay.dataset.open = "true";
+            openBtn.setAttribute('aria-expanded', 'true');
+            document.body.style.overflow = 'hidden';
+            menuTl.play();
+        } else {
+            openBtn.setAttribute('aria-expanded', 'false');
+            document.body.style.overflow = '';
+            menuTl.reverse();
+        }
+    }
+
+    openBtn?.addEventListener('click', () => toggleMenu(true));
+    closeBtn?.addEventListener('click', () => toggleMenu(false));
+    
     overlay?.querySelectorAll('.menu-link').forEach((link) =>
-        link.addEventListener('click', () => setMenu(false))
-    )
+        link.addEventListener('click', () => toggleMenu(false))
+    );
+
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') setMenu(false)
-    })
+        if (e.key === 'Escape' && overlay?.dataset.open === 'true') {
+            toggleMenu(false);
+        }
+    });
 </script>

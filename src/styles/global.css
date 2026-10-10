@@ -19,3 +19,41 @@ footer,
 .muted {
   color: var(--muted);
 }
+
+/* 全域 CSS 或 <style is:global> */
+
+/* 1. 寬度縮小，軌道完全透明 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 2. 預設滑塊完全透明 (隱形) */
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 9999px;
+  transition: background-color 0.3s ease;
+}
+
+/* 3. 當使用者將滑鼠移到網頁/容器上時，滾動條才以半透明毛玻璃紫出現 */
+:hover::-webkit-scrollbar-thumb {
+  background: rgba(102, 0, 255, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.dark :hover::-webkit-scrollbar-thumb {
+  background: rgba(167, 139, 250, 0.4);
+}
+
+/* 4. 直接 hover 到滾動條本身時加亮 */
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(102, 0, 255, 0.8) !important;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(167, 139, 250, 0.8) !important;
+}
