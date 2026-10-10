@@ -25,6 +25,7 @@ const friend = defineCollection({
     schema: ({ image }) =>
         z.object({
             name: z.string(),
+            order: z.number().optional(),
             heroImage: z.optional(image()),
             // 2. z.string 必須加上括號呼叫
             mediaLink: z.string(),

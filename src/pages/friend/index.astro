@@ -9,9 +9,15 @@ import { X, MessageSquare, ArrowUpRight } from '@lucide/astro';
 
 const friends = await getCollection('friend');
 
-// 預先將每個 friend 的 Markdown 內容在伺服器端渲染好供彈窗使用
+const sortedFriends = friends.sort((a, b) => {
+    const orderA = a.data.order ?? 999; // 沒寫 order 的預設排在最後面 (999)
+    const orderB = b.data.order ?? 999;
+    return orderA - orderB; // 數字小到大
+});
+
+// 預先將排序後的 friend 內容渲染好供彈窗使用
 const friendsWithContent = await Promise.all(
-    friends.map(async (friend) => {
+    sortedFriends.map(async (friend) => {
         const { Content } = await render(friend);
         return { ...friend, Content };
     })
@@ -75,22 +81,17 @@ const friendsWithContent = await Promise.all(
 <footer class="w-full bg-[#DDF1FF] dark:bg-[#1E293B] border-t-2 border-black dark:border-white/20 py-10 px-6 md:px-12 font-['roboto-mono',monospace] text-neutral-900 dark:text-neutral-100 transition-colors">
     <div class="mx-auto max-w-[1200px] flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         
-        <!-- 左側：Discord 互動引導 -->
         <div class="flex items-center gap-3 bg-white dark:bg-slate-800 border-2 border-black dark:border-white/30 px-4 py-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)]">
             <MessageSquare class="w-5 h-5 text-[#6600FF] dark:text-[#a78bfa] shrink-0" />
-            <span class="text-xs sm:text-sm font-bold tracking-tight">
+            <div class="text-xs sm:text-sm font-bold tracking-tight">
                 想交換友站或聊天？加我 Discord：<span class="text-[#6600FF] dark:text-[#a78bfa] underline underline-offset-4">daohui_.</span>
-                <br/>
-                <pre>
-名子:DaoHui
-簡介:嘻嘻
-頭像:https://daohuimodernblog.vercel.app/avatar.jpg
-網站:https://daohuimodernblog.vercel.app
-                </pre>
-            </span>
+                <pre class="mt-2 text-[11px] font-mono bg-neutral-100 dark:bg-slate-900 p-2 border border-black/10 dark:border-white/10">名稱: DaoHui
+簡介: 嘻嘻
+頭像: https://daohuimodernblog.vercel.app/avatar.jpg
+網站: https://daohuimodernblog.vercel.app</pre>
+            </div>
         </div>
 
-        <!-- 右側：版權與小標示 -->
         <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-400">
             <span>© {new Date().getFullYear()} DaoHui Blog</span>
             <span class="hidden sm:inline">/</span>
