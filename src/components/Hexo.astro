@@ -1,7 +1,9 @@
 ---
 import Header from './Header.astro';
-import ChodanPostCard from '../assets/chodanpostcard.jpeg';
+import ChodanDarkPostCard from '../assets/chodanpostcard.jpeg';
 import ChodanMainView from '../assets/Chodanmain2.png';
+import ChodanMainViewDark from '../assets/chodandarkmode.png'
+import ChodanPostCard from '../assets/chodan2.jpeg'
 import {ArrowUpRight} from '@lucide/astro';
 import '@fontsource/anton'
 import '@fontsource/roboto-mono'
@@ -53,11 +55,18 @@ import '@fontsource/cormorant-garamond'
                     <!-- 底部的圓形/半圓形裝飾背板 (淺色柔和圓圈) -->
                     <div class="absolute inset-0 bg-white/40 dark:bg-[#0F172A] rounded-full scale-95 z-0"></div>
 
-                    <!-- 主視覺人物圖片 -->
+                    <!-- 淺色模式圖片 (Dark Mode 時隱藏) -->
                     <img
                         src={ChodanMainView.src}
                         alt="Chodan main portrait"
-                        class="relative z-10 w-full h-full object-contain object-bottom"
+                        class="relative z-10 w-full h-full object-contain object-bottom dark:hidden"
+                    />
+
+                    <!-- 深色模式圖片 (Dark Mode 時顯示) -->
+                    <img
+                        src={ChodanMainViewDark.src}
+                        alt="Chodan main portrait (Dark Mode)"
+                        class="relative z-10 w-full h-full object-contain object-bottom hidden dark:block"
                     />
 
                     <!-- 拍立得風格卡片 (定位在左下角壓著主視覺) -->
@@ -69,9 +78,17 @@ import '@fontsource/cormorant-garamond'
                         </div>
 
                         <!-- 拍立得照片 -->
-                        <div class="h-[160px] w-full overflow-hidden bg-gray-200">
+                        <div class="h-[160px] w-full overflow-hidden bg-gray-200 dark:hidden">
                             <img
                                 src={ChodanPostCard.src}
+                                alt="Chodan"
+                                class="h-full w-full object-cover"
+                            />
+                        </div>
+
+                        <div class="h-[160px] w-full overflow-hidden bg-gray-200 hidden dark:block">
+                            <img
+                                src={ChodanDarkPostCard.src}
                                 alt="Chodan"
                                 class="h-full w-full object-cover"
                             />
