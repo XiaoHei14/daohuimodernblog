@@ -15,7 +15,9 @@ const blog = defineCollection({
             pubDate: z.coerce.date(),
             updatedDate: z.coerce.date().optional(),
             heroImage: z.optional(image()),
-			tags: z.array(z.string()).default([]),
+            tags: z.array(z.string()).default([]),
+            draft: z.boolean().default(false), // ← 新增：true 就不發佈
+            passwordHash: z.string().optional(),
         }),
 });
 

@@ -4,6 +4,7 @@ description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do ei
 pubDate: 'Oct 09 2026'
 heroImage: 'https://i.pinimg.com/736x/ac/7e/be/ac7ebe3015b2f0c92cedd6847eda94c7.jpg'
 tags: ['AIS3', 'HolyHack', 'CTF', 'Cloud Security', 'AWS']
+draft: true
 ---
 
 # 這是我第一篇 AIS3 好厲害學習筆記
