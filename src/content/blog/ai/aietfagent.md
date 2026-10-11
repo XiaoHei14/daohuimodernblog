@@ -1,7 +1,7 @@
 ---
 title: '打造獨屬於我的Agent基金經理人'
 description: 'De limitationibus et methodologia investigandi systematis multi-agentes ac distributionis quantitativae in mercato stockario Taivaniae.'
-author: ['DaoHui','chuen666666']
+author: ['DaoHui']
 pubDate: 'Oct 10 2026'
 heroImage: 'https://i.pinimg.com/1200x/6b/5d/37/6b5d374089a772e16092d33ba971a632.jpg'
 tags: ['AI', 'Quant', 'FinTech', 'Portfolio-Management']

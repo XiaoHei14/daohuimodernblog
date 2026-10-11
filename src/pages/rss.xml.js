@@ -14,7 +14,6 @@ export async function GET(context) {
             pubDate: post.data.pubDate, // 如果你的 markdown 裡面是用 date，請改成 post.data.date
             link: `/blog/${post.id}/`,
             // 如果你想保留其他自定義欄位（例如 author, heroImage 等），可以加在這邊
-            content: post.body,
         })),
     });
 }
