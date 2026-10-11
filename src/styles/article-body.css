@@ -1,0 +1,426 @@
+/* src/styles/article-body.css
+   Markdown 渲染樣式（雜誌版）。在 BlogPost.astro 中以
+   import "../styles/article-body.css"; 引入。
+   會讀取 BlogPost 的 :root 變數 --ink / --accent / --serif / --sans-heavy，
+   沒有定義時使用後面的備用值。 */
+
+.article-body {
+    --a-ink: var(--ink, #171717);
+    --a-accent: var(--accent, #6600ff);
+    --a-text: #262626;
+    --a-muted: #737373;
+    --a-rule: rgba(0, 0, 0, 0.2);
+    --a-measure: 42rem; /* 正文行寬 */
+    --a-serif: var(
+        --serif,
+        "Noto Serif TC",
+        "Source Han Serif TC",
+        "Songti TC",
+        "PMingLiU",
+        Georgia,
+        serif
+    );
+    --a-sans: var(
+        --sans-heavy,
+        "Noto Sans TC",
+        "PingFang TC",
+        "Microsoft JhengHei",
+        system-ui,
+        sans-serif
+    );
+    --a-mono: "Roboto Mono", ui-monospace, monospace;
+
+    font-family: var(--a-serif);
+    font-size: 1.125rem;
+    line-height: 1.95;
+    color: var(--a-text);
+    overflow-wrap: break-word;
+    text-autospace: normal; /* 中英之間自動留白（新版瀏覽器） */
+}
+
+/* ---------- 版面：文字走窄欄，圖片／程式碼／表格可以放寬 ---------- */
+.article-body > * {
+    max-width: var(--a-measure);
+}
+.article-body > :is(figure, pre, table, iframe, video, p:has(> img:only-child)) {
+    max-width: none;
+}
+.article-body > :first-child {
+    margin-top: 0;
+}
+
+/* ---------- 段落與行內 ---------- */
+.article-body p {
+    margin: 0 0 1.6rem;
+    text-wrap: pretty;
+}
+.article-body strong {
+    font-weight: 700;
+    color: var(--a-ink);
+}
+.article-body del {
+    color: var(--a-muted);
+    text-decoration: line-through;
+}
+.article-body mark {
+    background: rgba(102, 0, 255, 0.12);
+    color: inherit;
+    padding: 0 0.15em;
+}
+.article-body sup,
+.article-body sub {
+    font-size: 0.75em;
+    line-height: 0;
+}
+.article-body abbr[title] {
+    text-decoration: underline dotted;
+    text-underline-offset: 4px;
+    cursor: help;
+}
+.article-body kbd {
+    font-family: var(--a-mono);
+    font-size: 0.8em;
+    background: #fff;
+    border: 1px solid var(--a-ink);
+    border-bottom-width: 3px;
+    padding: 0.1em 0.45em;
+}
+
+/* ---------- 標題 ---------- */
+.article-body :is(h1, h2, h3, h4, h5, h6) {
+    font-family: var(--a-sans);
+    color: var(--a-ink);
+    line-height: 1.3;
+    scroll-margin-top: 2rem;
+    text-wrap: balance;
+}
+.article-body :is(h1, h2) {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 800;
+    margin: 3.5rem 0 1rem;
+}
+.article-body :is(h1, h2)::before {
+    content: "";
+    display: block;
+    width: 2.5rem;
+    height: 4px;
+    background: var(--a-accent);
+    margin-bottom: 1rem;
+}
+.article-body h3 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 2.5rem 0 0.75rem;
+}
+.article-body h4 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 2rem 0 0.5rem;
+}
+.article-body :is(h5, h6) {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 1.75rem 0 0.5rem;
+}
+.article-body h6 {
+    color: var(--a-muted);
+}
+/* 標題錨點連結（rehype-autolink-headings 等外掛）維持標題外觀 */
+.article-body :is(h1, h2, h3, h4, h5, h6) a {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* ---------- 連結 ---------- */
+.article-body a {
+    color: var(--a-accent);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 4px;
+}
+.article-body a:hover {
+    text-decoration-thickness: 2px;
+}
+.article-body a:focus-visible {
+    outline: 2px solid var(--a-accent);
+    outline-offset: 3px;
+}
+/* [@xxx](friend:xxx) 提及朋友 */
+.article-body a[href^="friend:"],
+.article-body a[role="button"] {
+    font-weight: 700;
+    text-decoration-style: dotted;
+}
+
+/* ---------- 清單 ---------- */
+.article-body :is(ul, ol) {
+    margin: 0 0 1.6rem;
+    padding-left: 1.5rem;
+}
+.article-body ul {
+    list-style: disc;
+}
+.article-body ul ul {
+    list-style: circle;
+}
+.article-body ol {
+    list-style: decimal;
+}
+.article-body li {
+    margin-bottom: 0.5rem;
+    line-height: 1.8;
+}
+.article-body li::marker {
+    color: var(--a-accent);
+}
+.article-body ol > li::marker {
+    font-family: var(--a-mono);
+    font-weight: 700;
+    font-size: 0.85em;
+}
+.article-body li > p {
+    margin: 0 0 0.5rem;
+}
+.article-body li > :is(ul, ol) {
+    margin: 0.5rem 0 0;
+}
+/* GFM 待辦清單 */
+.article-body .contains-task-list {
+    list-style: none;
+    padding-left: 0;
+}
+.article-body .task-list-item {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+}
+.article-body .task-list-item input[type="checkbox"] {
+    accent-color: var(--a-accent);
+    margin: 0;
+    flex: none;
+}
+
+/* ---------- 引言：雜誌 pull quote ---------- */
+.article-body blockquote {
+    margin: 2.75rem 0;
+    padding: 1.25rem 0;
+    border-top: 2px solid var(--a-ink);
+    border-bottom: 1px solid var(--a-rule);
+    font-family: "Cormorant Garamond", var(--a-serif);
+    font-size: 1.625rem;
+    line-height: 1.55;
+    font-weight: 500;
+    font-style: normal;
+    color: var(--a-ink);
+}
+.article-body blockquote::before {
+    content: "\201C";
+    display: block;
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 4rem;
+    line-height: 0.6;
+    height: 1.75rem;
+    color: var(--a-accent);
+}
+.article-body blockquote p {
+    margin: 0 0 0.75rem;
+}
+.article-body blockquote > :last-child {
+    margin-bottom: 0;
+}
+.article-body blockquote cite {
+    display: block;
+    margin-top: 0.75rem;
+    font-family: var(--a-mono);
+    font-size: 0.75rem;
+    font-style: normal;
+    color: var(--a-muted);
+}
+.article-body blockquote blockquote {
+    font-size: 1.25rem;
+    margin: 1.25rem 0 0;
+    border-top-width: 1px;
+}
+.article-body blockquote blockquote::before {
+    display: none;
+}
+
+/* ---------- 圖片、圖說、影片 ---------- */
+.article-body img {
+    max-width: 100%;
+    height: auto;
+}
+.article-body p:has(> img:only-child) {
+    margin: 2.25rem 0;
+}
+.article-body p > img:only-child,
+.article-body figure img {
+    display: block;
+    width: 100%;
+}
+.article-body figure {
+    margin: 2.25rem 0;
+}
+.article-body figure img {
+    margin: 0 0 0.6rem;
+}
+.article-body figcaption {
+    font-family: var(--a-mono);
+    font-size: 0.75rem;
+    line-height: 1.6;
+    color: var(--a-muted);
+}
+.article-body :is(iframe, video) {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 0;
+    margin: 2.25rem 0;
+}
+
+/* ---------- 分隔線：短紫線，呼應 h2 ---------- */
+.article-body hr {
+    width: 4rem;
+    border: 0;
+    border-top: 3px solid var(--a-accent);
+    margin: 3.5rem 0;
+}
+
+/* ---------- 程式碼 ---------- */
+.article-body :not(pre) > code {
+    font-family: var(--a-mono);
+    font-size: 0.85em;
+    background: rgba(102, 0, 255, 0.07);
+    color: #4a00b8;
+    padding: 0.15rem 0.4rem;
+}
+.article-body pre {
+    margin: 2rem 0;
+    padding: 1.25rem 1.5rem;
+    background-color: #1a1a1a; /* Shiki 會用 inline style 覆蓋成主題色 */
+    color: #f8f8f2;
+    border-left: 4px solid var(--a-accent);
+    overflow-x: auto;
+    font-family: var(--a-mono);
+    font-size: 0.875rem;
+    line-height: 1.7;
+    tab-size: 2;
+}
+.article-body pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    font-family: inherit;
+    font-size: inherit;
+}
+
+/* ---------- 表格 ---------- */
+.article-body table {
+    width: 100%;
+    margin: 2.25rem 0;
+    border-collapse: collapse;
+    font-family: var(--a-mono);
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    font-variant-numeric: tabular-nums;
+}
+.article-body :is(th, td) {
+    padding: 0.65rem 1rem 0.65rem 0;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--a-rule);
+}
+.article-body thead th {
+    font-weight: 700;
+    color: var(--a-ink);
+    border-top: 2px solid var(--a-ink);
+    border-bottom: 1px solid var(--a-ink);
+}
+.article-body tbody tr:last-child td {
+    border-bottom: 2px solid var(--a-ink);
+}
+
+/* ---------- 摺疊區塊 ---------- */
+.article-body details {
+    margin: 1.75rem 0;
+    padding: 0.9rem 0;
+    border-top: 1px solid var(--a-rule);
+    border-bottom: 1px solid var(--a-rule);
+}
+.article-body summary {
+    cursor: pointer;
+    font-family: var(--a-sans);
+    font-weight: 700;
+    color: var(--a-ink);
+}
+.article-body summary::marker {
+    color: var(--a-accent);
+}
+.article-body details[open] > summary {
+    margin-bottom: 0.75rem;
+}
+.article-body details > :last-child {
+    margin-bottom: 0;
+}
+
+/* ---------- 註腳（remark-gfm） ---------- */
+.article-body sup a[data-footnote-ref] {
+    font-family: var(--a-mono);
+    font-weight: 700;
+    text-decoration: none;
+    padding: 0 0.1em;
+}
+.article-body section.footnotes {
+    margin-top: 3.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--a-ink);
+    font-size: 0.95rem;
+    line-height: 1.8;
+    color: #525252;
+}
+.article-body section.footnotes > h2 {
+    /* 保留給螢幕閱讀器，視覺上隱藏 */
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+.article-body section.footnotes li:target {
+    background: rgba(102, 0, 255, 0.08);
+}
+.article-body a[data-footnote-backref] {
+    text-decoration: none;
+    margin-left: 0.25rem;
+}
+.article-body .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* ---------- 手機 ---------- */
+@media (max-width: 640px) {
+    .article-body {
+        font-size: 1.0625rem;
+    }
+    .article-body blockquote {
+        font-size: 1.375rem;
+    }
+    /* 程式碼區塊撐滿螢幕寬 */
+    .article-body > pre {
+        margin-inline: -1.5rem;
+        padding-inline: 1.5rem;
+    }
+    /* 表格太寬時在自己的區塊內橫向捲動 */
+    .article-body table {
+        display: block;
+        overflow-x: auto;
+    }
+}
