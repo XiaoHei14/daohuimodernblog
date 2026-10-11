@@ -1,0 +1,122 @@
+---
+// src/components/AuthorByline.astro
+// 顯示作者：頭像 + 名字 + 個人網站（網域）
+// - 作者是 DaoHui（站長本人）→ 直接用下面的 SELF 設定，不讀取 friend collection
+// - 其他作者 → 去 friend collection 比對 id 或 name，找不到就只顯示文字
+import { Image } from "astro:assets";
+import { getCollection } from "astro:content";
+import daohuiAvatar from "../../public/avatar.jpg"; // ← 改成你實際的頭像路徑
+import '@fontsource/cormorant-garamond'
+
+
+interface Props {
+    authors: string[];
+    class?: string;
+}
+
+const { authors, class: className = "" } = Astro.props;
+
+// 站長本人的固定資料
+const SELF = {
+    id: "daohui",
+    name: "DaoHui",
+    image: daohuiAvatar,
+    link: "https://www.daohui.site",
+};
+
+const stripExt = (id: string) => id.replace(/\.(md|mdx)$/, "");
+const norm = (s: string) => s.trim().replace(/^[@#]/, "").toLowerCase();
+const isSelf = (raw: string) => norm(raw) === SELF.id;
+const toHost = (link?: string) => {
+    if (!link) return "";
+    try {
+        return new URL(link).hostname.replace(/^www\./, "");
+    } catch {
+        return link;
+    }
+};
+
+// 只有出現「非 DaoHui」的作者時才需要讀 friend collection
+const friends = authors.some((a) => !isSelf(a))
+    ? await getCollection("friend") // collection 名稱請依專案調整
+    : [];
+
+const list = authors.map((raw) => {
+    if (isSelf(raw)) {
+        return {
+            name: SELF.name,
+            image: SELF.image,
+            link: SELF.link,
+            host: toHost(SELF.link),
+        };
+    }
+
+    const key = norm(raw);
+    const hit = friends.find(
+        (f) =>
+            norm(stripExt(f.id)) === key ||
+            (typeof f.data.name === "string" && norm(f.data.name) === key),
+    );
+    const link: string | undefined = hit?.data.mediaLink || undefined;
+
+    return {
+        name: hit?.data.name || raw,
+        image: hit?.data.heroImage,
+        link,
+        host: toHost(link),
+    };
+});
+---
+
+<ul class:list={["flex flex-col gap-4", className]}>
+    {
+        list.map((a) => {
+            const Tag = a.link ? "a" : "div";
+            return (
+                <li>
+                    <Tag
+                        {...(a.link
+                            ? {
+                                  href: a.link,
+                                  target: "_blank",
+                                  rel: "noopener noreferrer",
+                              }
+                            : {})}
+                        class:list={[
+                            "group inline-flex items-center gap-3 no-underline",
+                            a.link &&
+                                "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#6600FF]",
+                        ]}
+                    >
+                        {a.image ? (
+                            <Image
+                                src={a.image}
+                                alt={a.name}
+                                width={88}
+                                height={88}
+                                class="h-11 w-11 shrink-0 rounded-full border border-black/80 object-cover"
+                            />
+                        ) : (
+                            <span
+                                aria-hidden="true"
+                                class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-black/80 bg-white font-['Anton',sans-serif] text-lg text-neutral-800"
+                            >
+                                {a.name.charAt(0).toUpperCase()}
+                            </span>
+                        )}
+                        <span class="flex flex-col leading-tight">
+                            <span class="text-sm font-bold text-neutral-900 font-['cormorant_garamond'] italic">
+                                by {a.name}
+                            </span>
+                            {a.host && (
+                                <span class="mt-1 font-['Roboto_Mono',monospace] text-xs text-[#6600FF] underline decoration-1 underline-offset-4 group-hover:decoration-2">
+                                    {a.host} ↗
+                                </span>
+                            )}
+                        </span>
+                    </Tag>
+                </li>
+            );
+        })
+    }
+</ul>
