@@ -3,11 +3,12 @@ import "../styles/global.css";
 import Header from "../components/Header.astro";
 import BaseHead from "../components/BaseHead.astro";
 import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
+import WEBBANNER from '../assets/websitepaper.jpeg';
 ---
 
 <!doctype html>
 <html lang="zh-TW">
-    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} image={WEBBANNER} />
     <script is:inline>
         const theme = (() => {
             if (
