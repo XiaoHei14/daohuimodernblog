@@ -18,6 +18,7 @@ interface Props {
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
 const { title, description, image = FallbackImage } = Astro.props;
+const imageURL = new URL(image.src, Astro.site);
 ---
 
 <!-- Global Metadata -->
@@ -48,9 +49,11 @@ const { title, description, image = FallbackImage } = Astro.props;
 <meta property="og:url" content={Astro.url} />
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
-<meta property="og:image" content="https://i.pinimg.com/736x/d2/c7/95/d2c795e72661ee35cd068a0dab294b00.jpg" />
+<meta property="og:image" content={new URL(image.src, Astro.url)} />
 <meta property="og:site_name" content="DaoHui's Blog" />
 
-<!-- Twitter -->
-<meta name="twitter:card" content="https://i.pinimg.com/736x/d2/c7/95/d2c795e72661ee35cd068a0dab294b00.jpg"/>
-<meta property="twitter:image" content="https://i.pinimg.com/736x/d2/c7/95/d2c795e72661ee35cd068a0dab294b00.jpg">
+<!-- Twitter / X (修正完畢) -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={imageURL} />
