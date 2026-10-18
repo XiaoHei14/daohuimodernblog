@@ -3,7 +3,7 @@ title: 'DEADFACE CTF Writeup'
 description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
 author:
   - 'DaoHui'
-pubDate: 'Oct 09 2026'
+pubDate: 'Oct 18 2026'
 heroImage: 'https://i.pinimg.com/736x/9f/25/8d/9f258d252923f4b933f5e0b23b477191.jpg'
 tags: ['CTF', 'Pwn','Blue Team']
 draft: false
