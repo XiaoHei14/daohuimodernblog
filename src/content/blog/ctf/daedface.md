@@ -6,7 +6,7 @@ author:
 pubDate: 'Oct 09 2026'
 heroImage: 'https://i.pinimg.com/736x/9f/25/8d/9f258d252923f4b933f5e0b23b477191.jpg'
 tags: ['CTF', 'Pwn','Blue Team']
-draft: true
+draft: false
 ---
 
 # Hail Caesar
