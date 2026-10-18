@@ -38,6 +38,13 @@
     text-autospace: normal; /* 中英之間自動留白（新版瀏覽器） */
 }
 
+/* ---------- 深色模式自動變數適應 ---------- */
+.dark .article-body {
+    --a-text: #f5f5f5; /* 高亮度純白灰，確保極佳可讀性 */
+    --a-muted: #a3a3a3; /* 提升輔助文字亮度，避免過暗 */
+    --a-rule: rgba(255, 255, 255, 0.2);
+}
+
 /* ---------- 版面：文字走窄欄，圖片／程式碼／表格可以放寬 ---------- */
 .article-body > * {
     max-width: var(--a-measure);
@@ -58,6 +65,9 @@
     font-weight: 700;
     color: var(--a-ink);
 }
+.dark .article-body strong {
+    color: #ffffff;
+}
 .article-body del {
     color: var(--a-muted);
     text-decoration: line-through;
@@ -66,6 +76,10 @@
     background: rgba(102, 0, 255, 0.12);
     color: inherit;
     padding: 0 0.15em;
+}
+.dark .article-body mark {
+    background: rgba(168, 128, 255, 0.25);
+    color: #ffffff;
 }
 .article-body sup,
 .article-body sub {
@@ -85,6 +99,11 @@
     border-bottom-width: 3px;
     padding: 0.1em 0.45em;
 }
+.dark .article-body kbd {
+    background: #171717;
+    border-color: #ffffff;
+    color: #ffffff;
+}
 
 /* ---------- 標題 ---------- */
 .article-body :is(h1, h2, h3, h4, h5, h6) {
@@ -93,6 +112,9 @@
     line-height: 1.3;
     scroll-margin-top: 2rem;
     text-wrap: balance;
+}
+.dark .article-body :is(h1, h2, h3, h4, h5, h6) {
+    color: #ffffff;
 }
 .article-body :is(h1, h2) {
     font-size: clamp(1.5rem, 3vw, 2rem);
@@ -125,7 +147,7 @@
 .article-body h6 {
     color: var(--a-muted);
 }
-/* 標題錨點連結（rehype-autolink-headings 等外掛）維持標題外觀 */
+/* 標題錨點連結維持外觀 */
 .article-body :is(h1, h2, h3, h4, h5, h6) a {
     color: inherit;
     text-decoration: none;
@@ -137,6 +159,9 @@
     text-decoration: underline;
     text-decoration-thickness: 1px;
     text-underline-offset: 4px;
+}
+.dark .article-body a {
+    color: #be9eff; /* 深色模式下更亮眼的紫色 */
 }
 .article-body a:hover {
     text-decoration-thickness: 2px;
@@ -172,6 +197,9 @@
 }
 .article-body li::marker {
     color: var(--a-accent);
+}
+.dark .article-body li::marker {
+    color: #be9eff;
 }
 .article-body ol > li::marker {
     font-family: var(--a-mono);
@@ -213,6 +241,10 @@
     font-style: normal;
     color: var(--a-ink);
 }
+.dark .article-body blockquote {
+    border-top-color: #ffffff;
+    color: #ffffff;
+}
 .article-body blockquote::before {
     content: "\201C";
     display: block;
@@ -221,6 +253,9 @@
     line-height: 0.6;
     height: 1.75rem;
     color: var(--a-accent);
+}
+.dark .article-body blockquote::before {
+    color: #be9eff;
 }
 .article-body blockquote p {
     margin: 0 0 0.75rem;
@@ -285,6 +320,9 @@
     border-top: 3px solid var(--a-accent);
     margin: 3.5rem 0;
 }
+.dark .article-body hr {
+    border-top-color: #be9eff;
+}
 
 /* ---------- 程式碼 ---------- */
 .article-body :not(pre) > code {
@@ -293,6 +331,11 @@
     background: rgba(102, 0, 255, 0.07);
     color: #4a00b8;
     padding: 0.15rem 0.4rem;
+    border-radius: 0.25rem;
+}
+.dark .article-body :not(pre) > code {
+    background: rgba(168, 128, 255, 0.15);
+    color: #e2d2ff;
 }
 .article-body pre {
     margin: 2rem 0;
@@ -305,6 +348,13 @@
     font-size: 0.875rem;
     line-height: 1.7;
     tab-size: 2;
+    border-radius: 0.375rem;
+}
+.dark .article-body pre {
+    border-left-color: #be9eff;
+    background-color: #121212;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-left-width: 4px;
 }
 .article-body pre code {
     background: transparent;
@@ -336,8 +386,15 @@
     border-top: 2px solid var(--a-ink);
     border-bottom: 1px solid var(--a-ink);
 }
+.dark .article-body thead th {
+    color: #ffffff;
+    border-color: #ffffff;
+}
 .article-body tbody tr:last-child td {
     border-bottom: 2px solid var(--a-ink);
+}
+.dark .article-body tbody tr:last-child td {
+    border-bottom-color: #ffffff;
 }
 
 /* ---------- 摺疊區塊 ---------- */
@@ -353,8 +410,14 @@
     font-weight: 700;
     color: var(--a-ink);
 }
+.dark .article-body summary {
+    color: #ffffff;
+}
 .article-body summary::marker {
     color: var(--a-accent);
+}
+.dark .article-body summary::marker {
+    color: #be9eff;
 }
 .article-body details[open] > summary {
     margin-bottom: 0.75rem;
@@ -376,7 +439,10 @@
     border-top: 1px solid var(--a-ink);
     font-size: 0.95rem;
     line-height: 1.8;
-    color: #525252;
+    color: var(--a-muted);
+}
+.dark .article-body section.footnotes {
+    border-top-color: #ffffff;
 }
 .article-body section.footnotes > h2 {
     /* 保留給螢幕閱讀器，視覺上隱藏 */
@@ -390,6 +456,9 @@
 }
 .article-body section.footnotes li:target {
     background: rgba(102, 0, 255, 0.08);
+}
+.dark .article-body section.footnotes li:target {
+    background: rgba(168, 128, 255, 0.15);
 }
 .article-body a[data-footnote-backref] {
     text-decoration: none;

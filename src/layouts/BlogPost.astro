@@ -14,9 +14,6 @@ import "@fontsource/anton";
 import "@fontsource/roboto-mono";
 import '@fontsource/cormorant-garamond';
 import "../styles/article-body.css";
-// 想要更道地的中文襯線內文：npm i @fontsource/noto-serif-tc 然後取消下面這行註解
-// import "@fontsource/noto-serif-tc/400.css";
-// import "@fontsource/noto-serif-tc/700.css";
 
 const {
     title,
@@ -35,7 +32,7 @@ const {
 const authorList = Array.isArray(author) ? author : author ? [author] : [];
 const tagList = Array.isArray(tags) ? tags : tags ? [tags] : [];
 
-// 讀取 friends collection（名稱請依專案調整），給 [@xxx](friend:xxx) 用
+// 讀取 friends collection，給 [@xxx](friend:xxx) 用
 const friends = await getCollection("friend");
 const friendCards = friends.map((f) => ({
     id: f.id.replace(/\.(md|mdx)$/, ""),
@@ -46,9 +43,22 @@ const friendCards = friends.map((f) => ({
 <html lang="zh-Hant" class="scroll-smooth">
     <head>
         <BaseHead title={title} description={description} />
+        <script is:inline>
+            // 防閃爍腳本
+            if (
+                localStorage.theme === 'dark' ||
+                (!('theme' in localStorage) &&
+                    window.matchMedia('(prefers-color-scheme: dark)').matches)
+            ) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        </script>
         <style is:global>
             :root {
                 --ink: #171717;
+                --bg: #fafafa;
                 --accent: #6600ff;
                 --serif:
                     "Noto Serif TC", "Source Han Serif TC", "Songti TC",
@@ -58,18 +68,25 @@ const friendCards = friends.map((f) => ({
                     system-ui, sans-serif;
             }
 
-            /* ---------- 標題：整頁唯一的大動作 ---------- */
+            /* ---------- 深色模式 ---------- */
+            .dark {
+                --ink: #f5f5f5;
+                --bg: #0a0a0a;
+            }
+
+            /* ---------- 標題 ---------- */
             .headline {
                 font-family: "Anton", var(--sans-heavy);
                 font-weight: 900;
-                font-synthesis: none; /* Anton 只有 400，避免假粗體 */
-                font-size: clamp(2.5rem, 8.5vw, 7rem);
+                font-synthesis: none;
+                font-size: clamp(2rem, 8vw, 7rem);
                 line-height: 1.04;
                 letter-spacing: -0.01em;
                 text-transform: uppercase;
                 text-wrap: balance;
                 color: var(--ink);
                 margin: 0;
+                word-break: break-word;
             }
 
             /* ---------- 前言 (standfirst) ---------- */
@@ -77,7 +94,7 @@ const friendCards = friends.map((f) => ({
                 font-family: var(--serif);
                 font-size: 1.25rem;
                 line-height: 1.75;
-                color: #262626;
+                color: var(--ink);
                 border-top: 2px solid var(--ink);
                 padding-top: 1rem;
                 margin: 0;
@@ -92,30 +109,30 @@ const friendCards = friends.map((f) => ({
     </head>
 
     <body
-        class="bg-neutral-50 text-neutral-900 antialiased selection:bg-[#6600FF] selection:text-white"
+        class="bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100 antialiased selection:bg-[#6600FF] selection:text-white overflow-x-hidden transition-colors duration-200"
     >
         <!-- 導航列 + 期刊資訊列 -->
-        <div class="px-6 md:px-12 pt-6 font-['Roboto_Mono',monospace]">
+        <div class="px-4 md:px-12 pt-6 font-['Roboto_Mono',monospace]">
             <Header />
 
             <nav
-                class="max-w-[1280px] mx-auto mt-8 flex items-center justify-between gap-4 border-b border-black pb-3 text-xs"
+                class="max-w-[1280px] mx-auto mt-6 md:mt-8 flex flex-wrap items-center justify-between gap-4 border-b border-black dark:border-white pb-3 text-xs"
                 aria-label="Article Navigation"
             >
                 <button
                     type="button"
                     id="back-btn-top"
-                    class="group inline-flex items-center gap-2 font-bold text-[#6600FF] transition-opacity hover:opacity-80 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#6600FF]"
+                    class="group inline-flex items-center gap-2 font-bold text-[#6600FF] dark:text-[#be9eff] transition-opacity hover:opacity-80 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#6600FF]"
                 >
                     <span class="transition-transform group-hover:-translate-x-1"
                         >←</span
                     > Back to list
                 </button>
-                <div class="flex items-center gap-2 text-neutral-500">
+                <div class="flex items-center gap-2 text-neutral-600 dark:text-neutral-100 flex-wrap">
                     <FormattedDate date={pubDate} />
                     {
                         updatedDate && (
-                            <span class="italic text-neutral-400">
+                            <span class="italic text-neutral-500 dark:text-neutral-100">
                                 (Updated: <FormattedDate date={updatedDate} />)
                             </span>
                         )
@@ -128,7 +145,7 @@ const friendCards = friends.map((f) => ({
         <main class="fade-in opacity-0">
             <article
                 id="top"
-                class="mx-auto max-w-[1280px] px-6 pb-16 pt-10 md:px-12 md:pt-16"
+                class="mx-auto max-w-[1280px] px-4 pb-16 pt-8 md:px-12 md:pt-16"
             >
                 <!-- 開場：超大標題 -->
                 <header>
@@ -144,7 +161,7 @@ const friendCards = friends.map((f) => ({
                             ? "lg:col-span-4"
                             : "lg:col-span-8 lg:col-start-5"}
                     >
-                        {description && <p class=" font-['cormorant_garamond'] italic">{description}</p>}
+                        {description && <p class="font-['cormorant_garamond'] italic text-lg md:text-xl text-neutral-800 dark:text-neutral-100">{description}</p>}
 
                         {
                             authorList.length > 0 && (
@@ -156,7 +173,7 @@ const friendCards = friends.map((f) => ({
                         }
                         {
                             minutesRead && (
-                                <p class="mt-4 font-['Roboto_Mono',monospace] text-xs text-neutral-500">
+                                <p class="mt-4 font-['Roboto_Mono',monospace] text-xs text-neutral-600 dark:text-neutral-100">
                                     {minutesRead}
                                 </p>
                             )
@@ -175,7 +192,7 @@ const friendCards = friends.map((f) => ({
                                     priority
                                 />
                                 {heroCaption && (
-                                    <figcaption class="mt-2 font-['Roboto_Mono',monospace] text-xs text-neutral-500">
+                                    <figcaption class="mt-2 font-['Roboto_Mono',monospace] text-xs text-neutral-600 dark:text-neutral-100">
                                         {heroCaption}
                                     </figcaption>
                                 )}
@@ -196,7 +213,7 @@ const friendCards = friends.map((f) => ({
                                 tagList.length > 0 && (
                                     <ul class="flex flex-wrap gap-2">
                                         {tagList.map((tag) => (
-                                            <li class="border border-black bg-white px-2 py-0.5 text-xs font-bold text-neutral-800">
+                                            <li class="border border-black dark:border-white bg-white dark:bg-neutral-900 px-2 py-0.5 text-xs font-bold text-neutral-900 dark:text-neutral-100">
                                                 #{tag}
                                             </li>
                                         ))}
@@ -205,16 +222,16 @@ const friendCards = friends.map((f) => ({
                             }
                             <a
                                 href="#top"
-                                class="hidden text-xs font-bold text-neutral-400 transition-colors hover:text-black lg:inline"
+                                class="hidden text-xs font-bold text-neutral-500 dark:text-neutral-100 transition-colors hover:text-black dark:hover:text-white lg:inline"
                             >
                                 Top ↑
                             </a>
                         </div>
                     </aside>
 
-                    <div class="lg:col-span-8">
+                    <div class="lg:col-span-8 min-w-0">
                         <PasswordGate hash={passwordHash}>
-                            <div class="article-body">
+                            <div class="article-body text-neutral-900 dark:text-neutral-100 dark:prose-invert">
                                 {Content ? <Content /> : <slot />}
                             </div>
                         </PasswordGate>
@@ -225,12 +242,12 @@ const friendCards = friends.map((f) => ({
 
         <!-- 底部返回按鈕 -->
         <div
-            class="mx-auto mt-4 flex max-w-[720px] items-center justify-between border-t border-black/10 px-6 pb-20 pt-8"
+            class="mx-auto mt-4 flex max-w-[720px] items-center justify-between border-t border-black/10 dark:border-white/20 px-4 md:px-6 pb-20 pt-8"
         >
             <button
                 type="button"
                 id="back-btn-bottom"
-                class="group inline-flex items-center gap-2 text-xs font-bold text-[#6600FF] transition-opacity hover:opacity-85 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#6600FF]"
+                class="group inline-flex items-center gap-2 text-xs font-bold text-[#6600FF] dark:text-[#be9eff] transition-opacity hover:opacity-85 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#6600FF]"
             >
                 <span class="transition-transform group-hover:-translate-x-1"
                     >←</span
@@ -238,13 +255,13 @@ const friendCards = friends.map((f) => ({
             </button>
             <a
                 href="#top"
-                class="text-xs font-bold text-neutral-400 transition-colors hover:text-black"
+                class="text-xs font-bold text-neutral-500 dark:text-neutral-100 transition-colors hover:text-black dark:hover:text-white font-['Roboto_Mono',monospace]"
             >
                 Top ↑
             </a>
         </div>
 
-        <!-- 隱藏的 friend 卡片模板：script 會把文章裡的 [@xxx](friend:xxx) 換成這些卡片 -->
+        <!-- 隱藏的 friend 卡片模板 -->
         <div id="friend-cards" hidden>
             {
                 friendCards.map((f) => (
@@ -261,7 +278,7 @@ const friendCards = friends.map((f) => ({
                             {f.heroImage ? (
                                 <FriendPolaroidCard image={f.heroImage} />
                             ) : (
-                                <span class="flex h-[200px] w-[150px] items-center justify-center border border-black bg-gray-100 text-xs text-neutral-400">
+                                <span class="flex h-[200px] w-[150px] items-center justify-center border border-black dark:border-white bg-gray-100 dark:bg-neutral-800 text-xs text-neutral-600 dark:text-neutral-100">
                                     {f.name}
                                 </span>
                             )}
@@ -279,7 +296,6 @@ const friendCards = friends.map((f) => ({
 <script>
     import { gsap } from "gsap";
 
-    // 進場動畫只做一次；使用者偏好減少動態時直接顯示
     document.addEventListener("DOMContentLoaded", () => {
         const reduce = window.matchMedia(
             "(prefers-reduced-motion: reduce)",
@@ -297,7 +313,6 @@ const friendCards = friends.map((f) => ({
         });
     });
 
-    // 文章裡的 [@daohui](friend:daohui) 只顯示 @id，點擊後才彈出 FriendPolaroidCard
     let popover: HTMLElement | null = null;
 
     const closePopover = () => {
@@ -318,27 +333,29 @@ const friendCards = friends.map((f) => ({
             link.setAttribute("tabindex", "0");
             link.style.cursor = "pointer";
 
-            if (!card) return; // 找不到對應的 friend：維持純文字樣式
+            if (!card) return;
 
             const open = (e: Event) => {
                 e.preventDefault();
                 e.stopPropagation();
                 const isSame = popover?.dataset.for === id;
                 closePopover();
-                if (isSame) return; // 再點一次就收起
+                if (isSame) return;
 
                 const rect = link.getBoundingClientRect();
                 popover = document.createElement("div");
                 popover.dataset.for = id;
-                popover.style.cssText = `position:absolute;z-index:50;top:${
-                    rect.bottom + window.scrollY + 8
-                }px;left:${Math.max(
-                    8,
+                const leftPos = Math.max(
+                    12,
                     Math.min(
                         rect.left + window.scrollX,
-                        window.innerWidth - 170,
+                        window.innerWidth - 170
                     ),
-                )}px;`;
+                );
+
+                popover.style.cssText = `position:absolute;z-index:50;top:${
+                    rect.bottom + window.scrollY + 8
+                }px;left:${leftPos}px;`;
                 popover.appendChild(card.cloneNode(true));
                 document.body.appendChild(popover);
             };
@@ -349,7 +366,6 @@ const friendCards = friends.map((f) => ({
             });
         });
 
-    // 點卡片以外的地方或按 Esc 關閉
     document.addEventListener("click", (e) => {
         if (popover && !popover.contains(e.target as Node)) closePopover();
     });
