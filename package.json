@@ -38,6 +38,7 @@
     "mdast-util-to-string": "^4.0.0",
     "node": "^26.12.1",
     "reading-time": "^1.5.0",
+    "sanitize-html": "^2.18.1",
     "satteri": "^0.10.5",
     "sharp": "^0.35.0",
     "speed-insights": "vercel/speed-insights",
@@ -46,5 +47,8 @@
   },
   "allowScripts": {
     "esbuild": true
+  },
+  "devDependencies": {
+    "@types/sanitize-html": "^2.16.2"
   }
 }

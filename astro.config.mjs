@@ -1,21 +1,22 @@
-// @ts-check
+
+ // @ts-check
 
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import { defineConfig, fontProviders } from 'astro/config';
-import tailwindcss from "@tailwindcss/vite";
-import { unified } from "@astrojs/markdown-remark";
+import tailwindcss from '@tailwindcss/vite';
+import vercel from '@astrojs/vercel';
 import { remarkReadingTime } from './remark-reading-time.mjs';
-import vercel from "@astrojs/vercel";
-import node from '@astrojs/node';
 
 // https://astro.build/config
 export default defineConfig({
     output: 'server',
     site: 'https://www.daohui.site',
+
     markdown: {
         remarkPlugins: [remarkReadingTime],
     },
+
     integrations: [mdx(), sitemap()],
 
     fonts: [
@@ -46,8 +47,6 @@ export default defineConfig({
     vite: {
         plugins: [tailwindcss()],
     },
-    adapter: node({
-        mode: 'standalone'
-    })
 
+    adapter: vercel(),
 });
