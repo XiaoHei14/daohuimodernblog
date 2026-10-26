@@ -3,7 +3,7 @@ import { getEntry, render } from 'astro:content';
 import BlogPost from '../../layouts/BlogPost.astro';
 import { createSupabaseServerClient } from '../../lib/supabase-server';
 import { marked } from 'marked';
-import sanitizeHtml from 'sanitize-html';
+import DOMPurify from 'isomorphic-dompurify';
 
 export const prerender = false;
 
@@ -65,27 +65,8 @@ if (isSupabasePost) {
     const markdown = data.content ?? '';
     const parsedHtml = await marked.parse(markdown);
     
-    const contentHtml = sanitizeHtml(parsedHtml, {
-        allowedTags: [
-            ...sanitizeHtml.defaults.allowedTags,
-            'img', 'h1', 'h2', 'h3', 'h4', 'pre', 'code', 'hr', 'del', 'table', 'thead', 'tbody', 'tr', 'th', 'td',
-        ],
-        allowedAttributes: {
-            ...sanitizeHtml.defaults.allowedAttributes,
-            a: ['href', 'name', 'target', 'rel'],
-            img: ['src', 'alt', 'title', 'width', 'height', 'loading'],
-            code: ['class'],
-            pre: ['class'],
-            th: ['align'],
-            td: ['align'],
-        },
-        transformTags: {
-            a: sanitizeHtml.simpleTransform('a', {
-                target: '_blank',
-                rel: 'noopener noreferrer',
-            }),
-        },
-    });
+    // ✅ 已修正：改用 DOMPurify.sanitize
+    const contentHtml = DOMPurify.sanitize(parsedHtml);
 
     remotePost = {
         title: data.title,

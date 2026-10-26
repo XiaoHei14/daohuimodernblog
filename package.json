@@ -1,17 +1,6 @@
 {
   "name": "DaoHuiBlog",
-  "type": "module",
   "version": "0.0.1",
-  "engines": {
-    "node": "24.21.0"
-  },
-  "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
-    "astro": "astro",
-    "generate-types": "wrangler types"
-  },
   "dependencies": {
     "@astrojs/cloudflare": "^14.3.4",
     "@astrojs/markdown-remark": "^7.3.2",
@@ -35,12 +24,12 @@
     "astro-seo": "^1.2.0",
     "gsap": "^3.15.0",
     "i18next": "^23.16.8",
+    "isomorphic-dompurify": "^4.6.0",
     "marked": "^18.1.1",
     "mdast-util-to-string": "^4.0.0",
     "node": "^26.12.1",
     "poppunkblog": ".",
     "reading-time": "^1.5.0",
-    "sanitize-html": "^2.18.1",
     "satteri": "^0.10.5",
     "sharp": "^0.35.0",
     "speed-insights": "vercel/speed-insights",
@@ -50,7 +39,15 @@
   "allowScripts": {
     "esbuild": true
   },
-  "devDependencies": {
-    "@types/sanitize-html": "^2.16.2"
-  }
+  "engines": {
+    "node": "24.21.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "generate-types": "wrangler types"
+  },
+  "type": "module"
 }
