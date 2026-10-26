@@ -26,7 +26,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return context.redirect("/dashboard/login");
   }
 
-  if (user?.is_super_admin !== true) {
+  if (user.app_metadata?.is_super_admin !== true) {
     return new Response("403 Forbidden", {
       status: 403,
       headers: {
