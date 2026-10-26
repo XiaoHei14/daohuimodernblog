@@ -14,6 +14,8 @@ import "@fontsource/anton";
 import "@fontsource/roboto-mono";
 import '@fontsource/cormorant-garamond';
 import "../styles/article-body.css";
+import MemDiagram from '../components/MemDiagram.astro';
+import Guestbook from "../components/Guestbook.astro";
 
 const {
     title,
@@ -232,7 +234,7 @@ const friendCards = friends.map((f) => ({
                     <div class="lg:col-span-8 min-w-0">
                         <PasswordGate hash={passwordHash}>
                             <div class="article-body text-neutral-900 dark:text-neutral-100 dark:prose-invert">
-                                {Content ? <Content /> : <slot />}
+                                {Content ? <Content components={{ MemDiagram }} /> : <slot />}
                             </div>
                         </PasswordGate>
                     </div>
@@ -288,7 +290,8 @@ const friendCards = friends.map((f) => ({
             }
         </div>
 
-        <Giscus />
+        <!-- <Giscus /> -->
+        <Guestbook/>
         <Footer />
     </body>
 </html>

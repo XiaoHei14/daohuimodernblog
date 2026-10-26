@@ -1,0 +1,632 @@
+---
+// src/components/Guestbook.astro
+import "@fontsource/anton";
+import "@fontsource/roboto-mono";
+
+interface Props {
+    page?: string;
+    title?: string;
+    showTitle?: boolean;
+}
+
+const {
+    page = Astro.url.pathname,
+    title = "Guestbook",
+    showTitle = true,
+} = Astro.props;
+
+const supabaseUrl = import.meta.env.SUPABASE_URL as string | undefined;
+const supabaseKey = import.meta.env.SUPABASE_KEY as string | undefined;
+const configured = Boolean(supabaseUrl && supabaseKey);
+---
+
+<section
+    data-guestbook
+    data-page={page}
+    data-url={supabaseUrl}
+    data-key={supabaseKey}
+    class="mx-auto w-full max-w-[720px] px-4 sm:px-6 pb-20 pt-8 font-['Roboto_Mono',monospace] text-neutral-900 dark:text-neutral-100 relative"
+>
+    <div class="border-t-2 border-neutral-900 dark:border-neutral-100 pt-6">
+        <div
+            class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 sm:gap-4"
+        >
+            {
+                showTitle ? (
+                    <h2 class="font-['Anton',sans-serif] text-3xl sm:text-4xl uppercase tracking-tight text-neutral-900 dark:text-white">
+                        {title}
+                    </h2>
+                ) : (
+                    <span />
+                )
+            }
+            <span
+                data-count
+                class="text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400"
+            ></span>
+        </div>
+
+        {
+            !configured ? (
+                <p class="mt-6 text-xs text-red-600">
+                    留言板尚未設定：缺少 SUPABASE_URL 或 SUPABASE_KEY。
+                </p>
+            ) : (
+                <>
+                    {/* GitHub 登入列 */}
+                    <div class="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-black/10 dark:border-white/10 bg-white/40 dark:bg-neutral-900/40 p-4 backdrop-blur-sm">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <img
+                                data-user-avatar
+                                src="https://github.com/shadcn.png"
+                                alt="Avatar"
+                                class="h-9 w-9 rounded-full object-cover shrink-0 border border-black/20 dark:border-white/20"
+                            />
+                            <div class="min-w-0">
+                                <p class="text-[10px] uppercase tracking-wider text-neutral-400">
+                                    Signed in as
+                                </p>
+                                <p
+                                    data-user-status
+                                    class="text-sm font-bold text-neutral-900 dark:text-white truncate"
+                                >
+                                    Guest
+                                </p>
+                            </div>
+                        </div>
+                        <div class="shrink-0">
+                            <button
+                                type="button"
+                                data-github-auth
+                                class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 px-4 py-2 text-xs font-bold uppercase tracking-wider transition-opacity hover:opacity-80 cursor-pointer"
+                            >
+                                <svg
+                                    class="h-4 w-4 fill-current shrink-0"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                                </svg>
+                                <span data-auth-text>Sign in with GitHub</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <form data-form class="relative mt-6 space-y-6">
+                        <div>
+                            <label
+                                for="gb-name"
+                                class="block text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400"
+                            >
+                                Name
+                            </label>
+                            <input
+                                id="gb-name"
+                                name="name"
+                                type="text"
+                                required
+                                maxlength="30"
+                                autocomplete="nickname"
+                                placeholder="Your name"
+                                class="mt-2 w-full border-b border-black/80 dark:border-white/80 bg-transparent py-2 text-sm text-neutral-900 dark:text-white focus:border-[#6600FF] focus:outline-none"
+                            />
+                        </div>
+
+                        <div>
+                            <div class="flex items-baseline justify-between">
+                                <label
+                                    for="gb-message"
+                                    class="block text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400"
+                                >
+                                    Message
+                                </label>
+                                <span
+                                    data-counter
+                                    class="text-[11px] text-neutral-400"
+                                >
+                                    0 / 500
+                                </span>
+                            </div>
+                            <textarea
+                                id="gb-message"
+                                name="message"
+                                required
+                                maxlength="500"
+                                rows="4"
+                                class="mt-2 w-full resize-y border-b border-black/80 dark:border-white/80 bg-transparent py-2 text-sm leading-relaxed text-neutral-900 dark:text-white focus:border-[#6600FF] focus:outline-none"
+                            />
+                        </div>
+
+                        <div
+                            aria-hidden="true"
+                            class="absolute -left-[9999px] h-0 w-0 overflow-hidden"
+                        >
+                            <label>
+                                Website
+                                <input
+                                    name="website"
+                                    type="text"
+                                    tabindex="-1"
+                                    autocomplete="off"
+                                />
+                            </label>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-4">
+                            <button
+                                type="submit"
+                                class="group inline-flex cursor-pointer items-center justify-center gap-2 bg-[#6600FF] px-6 py-3 text-xs font-bold uppercase tracking-wider text-white transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6600FF] disabled:cursor-not-allowed disabled:opacity-45"
+                            >
+                                Sign guestbook
+                                <span
+                                    aria-hidden="true"
+                                    class="transition-transform group-hover:translate-x-1"
+                                >
+                                    →
+                                </span>
+                            </button>
+                            <p
+                                data-status
+                                role="status"
+                                class="text-xs text-center sm:text-left"
+                            />
+                        </div>
+                    </form>
+
+                    <p
+                        data-loading
+                        class="mt-10 text-xs uppercase tracking-wider text-neutral-400"
+                    >
+                        Loading…
+                    </p>
+                    <ul
+                        data-list
+                        class="mt-10 divide-y divide-black/10 dark:divide-white/10"
+                    />
+                    <p
+                        data-empty
+                        hidden
+                        class="mt-10 text-xs uppercase tracking-wider text-neutral-400"
+                    >
+                        No messages yet. Be the first.
+                    </p>
+                </>
+            )
+        }
+    </div>
+
+    {/* ================= 編輯 / 刪除專用彈跳 UI (Modal) ================= */}
+    <div
+        data-modal
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+        hidden
+    >
+        <div
+            class="w-full max-w-md border-2 border-neutral-900 dark:border-white bg-[#F5F3ED] dark:bg-[#0F172A] p-6 shadow-2xl space-y-6"
+        >
+            <div
+                class="flex items-center justify-between border-b border-black/20 dark:border-white/20 pb-3"
+            >
+                <h3
+                    data-modal-title
+                    class="font-['Anton',sans-serif] text-xl uppercase tracking-wider text-neutral-900 dark:text-white"
+                >
+                    Edit Message
+                </h3>
+                <button
+                    type="button"
+                    data-modal-close
+                    class="text-xs uppercase font-bold text-neutral-500 hover:text-neutral-900 dark:hover:text-white cursor-pointer"
+                >
+                    [ Close ]
+                </button>
+            </div>
+
+            {/* 編輯用表單 */}
+            <div data-modal-edit-box class="space-y-4">
+                <div>
+                    <label
+                        class="block text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1"
+                    >
+                        Update Message (Max 500 chars)
+                    </label>
+                    <textarea
+                        data-modal-textarea
+                        rows="4"
+                        maxlength="500"
+                        class="w-full resize-y border border-black/30 dark:border-white/30 bg-white dark:bg-neutral-900 p-3 text-sm leading-relaxed text-neutral-900 dark:text-white focus:border-[#6600FF] focus:outline-none"
+                    ></textarea>
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button
+                        type="button"
+                        data-modal-cancel
+                        class="px-4 py-2 text-xs font-bold uppercase border border-black/20 dark:border-white/20 hover:bg-neutral-200 dark:hover:bg-neutral-800 cursor-pointer"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        data-modal-confirm
+                        class="bg-[#6600FF] text-white px-5 py-2 text-xs font-bold uppercase tracking-wider hover:opacity-85 cursor-pointer"
+                    >
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+
+            {/* 刪除確認用區塊 */}
+            <div data-modal-delete-box class="space-y-4 hidden">
+                <p class="text-sm text-neutral-700 dark:text-neutral-300">
+                    確定要永久刪除這則留言嗎？此動作無法復原。
+                </p>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button
+                        type="button"
+                        data-modal-delete-cancel
+                        class="px-4 py-2 text-xs font-bold uppercase border border-black/20 dark:border-white/20 hover:bg-neutral-200 dark:hover:bg-neutral-800 cursor-pointer"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        data-modal-delete-confirm
+                        class="bg-red-600 text-white px-5 py-2 text-xs font-bold uppercase tracking-wider hover:opacity-85 cursor-pointer"
+                    >
+                        Confirm Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    import { createClient } from "@supabase/supabase-js";
+
+    const MODERATED = false;
+    const COOLDOWN_MS = 30_000;
+    const COOLDOWN_KEY = "guestbook:last-post";
+    const DEFAULT_AVATAR = "https://github.com/shadcn.png";
+
+    type Entry = {
+        id: string;
+        user_id?: string;
+        name: string;
+        message: string;
+        created_at: string;
+        avatar_url?: string;
+    };
+
+    const formatDate = (iso: string) => {
+        const d = new Date(iso);
+        return Number.isNaN(d.getTime())
+            ? ""
+            : d.toLocaleDateString("sv-SE").replaceAll("-", ".");
+    };
+
+    document
+        .querySelectorAll<HTMLElement>("[data-guestbook]")
+        .forEach(async (root) => {
+            const { url, key, page } = root.dataset;
+            const form = root.querySelector<HTMLFormElement>("[data-form]");
+            if (!url || !key || !page || !form) return;
+
+            const supabase = createClient(url, key);
+            const list = root.querySelector<HTMLUListElement>("[data-list]")!;
+            const loading = root.querySelector<HTMLElement>("[data-loading]")!;
+            const empty = root.querySelector<HTMLElement>("[data-empty]")!;
+            const count = root.querySelector<HTMLElement>("[data-count]")!;
+            const status = root.querySelector<HTMLElement>("[data-status]")!;
+            const counter = root.querySelector<HTMLElement>("[data-counter]")!;
+            const nameInput =
+                form.querySelector<HTMLInputElement>('input[name="name"]')!;
+            const textarea = form.querySelector<HTMLTextAreaElement>(
+                'textarea[name="message"]',
+            )!;
+            const button = form.querySelector<HTMLButtonElement>(
+                'button[type="submit"]',
+            )!;
+
+            // Modal 元素選取
+            const modal = root.querySelector<HTMLElement>("[data-modal]")!;
+            const modalTitle =
+                root.querySelector<HTMLElement>("[data-modal-title]")!;
+            const modalEditBox = root.querySelector<HTMLElement>(
+                "[data-modal-edit-box]",
+            )!;
+            const modalDeleteBox = root.querySelector<HTMLElement>(
+                "[data-modal-delete-box]",
+            )!;
+            const modalTextarea = root.querySelector<HTMLTextAreaElement>(
+                "[data-modal-textarea]",
+            )!;
+            const modalCloseBtn =
+                root.querySelector<HTMLElement>("[data-modal-close]")!;
+            const modalCancelBtn = root.querySelector<HTMLElement>(
+                "[data-modal-cancel]",
+            )!;
+            const modalConfirmBtn = root.querySelector<HTMLElement>(
+                "[data-modal-confirm]",
+            )!;
+            const modalDelCancelBtn = root.querySelector<HTMLElement>(
+                "[data-modal-delete-cancel]",
+            )!;
+            const modalDelConfirmBtn = root.querySelector<HTMLElement>(
+                "[data-modal-delete-confirm]",
+            )!;
+
+            const userAvatarImg =
+                root.querySelector<HTMLImageElement>("[data-user-avatar]")!;
+            const userStatusEl =
+                root.querySelector<HTMLElement>("[data-user-status]")!;
+            const authBtn =
+                root.querySelector<HTMLButtonElement>("[data-github-auth]")!;
+            const authText =
+                root.querySelector<HTMLElement>("[data-auth-text]")!;
+
+            let currentUser: any = null;
+
+            const closeModal = () => {
+                modal.hidden = true;
+            };
+
+            modalCloseBtn.onclick = closeModal;
+            modalCancelBtn.onclick = closeModal;
+            modalDelCancelBtn.onclick = closeModal;
+
+            const {
+                data: { session },
+            } = await supabase.auth.getSession();
+            if (session?.user) {
+                currentUser = session.user;
+                const meta = currentUser.user_metadata;
+                if (!nameInput.value) {
+                    nameInput.value = meta.full_name || meta.user_name || "";
+                }
+                userStatusEl.textContent =
+                    meta.full_name || meta.user_name || "GitHub User";
+                userAvatarImg.src = meta.avatar_url || DEFAULT_AVATAR;
+                authText.textContent = "Sign out";
+                authBtn.onclick = async () => {
+                    await supabase.auth.signOut();
+                    window.location.reload();
+                };
+            } else {
+                authBtn.onclick = async () => {
+                    await supabase.auth.signInWithOAuth({
+                        provider: "github",
+                        options: { redirectTo: window.location.href },
+                    });
+                };
+            }
+
+            let total = 0;
+
+            const setStatus = (text: string, isError = false) => {
+                status.textContent = text;
+                status.className = `text-xs ${isError ? "text-red-500" : "text-[#6600FF]"}`;
+            };
+            const updateCount = () => {
+                count.textContent = total > 0 ? `${total} messages` : "";
+                empty.hidden = total > 0;
+            };
+
+            textarea.addEventListener("input", () => {
+                counter.textContent = `${textarea.value.length} / 500`;
+            });
+
+            const renderEntry = (entry: Entry) => {
+                const li = document.createElement("li");
+                li.className = "py-6 flex items-start gap-3 sm:gap-4";
+                li.dataset.id = entry.id;
+
+                const avatar = document.createElement("img");
+                avatar.className =
+                    "h-9 w-9 sm:h-10 sm:w-10 rounded-full object-cover shrink-0 border border-black/10 dark:border-white/10 mt-1";
+                avatar.src = entry.avatar_url || DEFAULT_AVATAR;
+                avatar.alt = entry.name;
+
+                const contentDiv = document.createElement("div");
+                contentDiv.className = "flex-1 min-w-0 overflow-hidden";
+
+                const head = document.createElement("div");
+                head.className =
+                    "flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 sm:gap-4 text-xs";
+
+                const name = document.createElement("span");
+                name.className =
+                    "font-bold text-neutral-900 dark:text-neutral-100 truncate";
+                name.textContent = entry.name;
+
+                const rightHead = document.createElement("div");
+                rightHead.className = "flex items-center gap-3 shrink-0";
+
+                const date = document.createElement("span");
+                date.className = "text-neutral-400 text-[11px]";
+                date.textContent = formatDate(entry.created_at);
+                rightHead.append(date);
+
+                // 如果有登入且符合擁有者，或是你想先放寬為只要有登入就顯示測試，可依需求調整
+                if (
+                    currentUser &&
+                    entry.user_id &&
+                    currentUser.id === entry.user_id
+                ) {
+                    const editBtn = document.createElement("button");
+                    editBtn.type = "button";
+                    editBtn.className =
+                        "text-neutral-400 hover:text-neutral-900 dark:hover:text-white underline cursor-pointer text-[11px]";
+                    editBtn.textContent = "Edit";
+
+                    const deleteBtn = document.createElement("button");
+                    deleteBtn.type = "button";
+                    deleteBtn.className =
+                        "text-red-500 hover:text-red-700 underline cursor-pointer text-[11px]";
+                    deleteBtn.textContent = "Delete";
+
+                    // 點擊刪除按鈕 -> 彈出 Modal 確認
+                    deleteBtn.onclick = async () => {
+                        const { error } = await supabase
+                            .from("guestbook")
+                            .delete()
+                            .eq("id", entry.id);
+                        if (!error) {
+                            li.remove();
+                            total -= 1;
+                            updateCount();
+                        } else {
+                            alert("刪除失敗");
+                        }
+                    };
+
+                    // 點擊編輯按鈕 -> 彈出 Modal 編輯器
+                    editBtn.onclick = () => {
+                        modalTitle.textContent = "Edit Message";
+                        modalDeleteBox.hidden = true;
+                        modalEditBox.hidden = false;
+                        modalTextarea.value = entry.message;
+                        modal.hidden = false;
+
+                        modalConfirmBtn.onclick = async () => {
+                            const trimmed = modalTextarea.value.trim();
+                            if (!trimmed || trimmed.length > 500) {
+                                alert("留言不能為空且不可超過 500 字");
+                                return;
+                            }
+
+                            const { error } = await supabase
+                                .from("guestbook")
+                                .update({ message: trimmed })
+                                .eq("id", entry.id);
+
+                            if (!error) {
+                                entry.message = trimmed;
+                                body.textContent = trimmed;
+                                closeModal();
+                            } else {
+                                alert("修改失敗");
+                            }
+                        };
+                    };
+
+                    rightHead.append(editBtn, deleteBtn);
+                }
+
+                head.append(name, rightHead);
+
+                const body = document.createElement("p");
+                body.className =
+                    "mt-2 whitespace-pre-wrap break-words font-['Noto_Serif_TC','Source_Han_Serif_TC','Songti_TC',Georgia,serif] text-sm sm:text-base leading-relaxed text-neutral-800 dark:text-neutral-300";
+                body.textContent = entry.message;
+
+                contentDiv.append(head, body);
+                li.append(avatar, contentDiv);
+                return li;
+            };
+
+            try {
+                const { data: entries, error } = await supabase
+                    .from("guestbook")
+                    .select(
+                        "id, user_id, name, message, created_at, avatar_url",
+                    )
+                    .eq("page", page)
+                    .order("created_at", { ascending: false })
+                    .limit(50);
+
+                if (error) throw error;
+                (entries || []).forEach((e) => list.append(renderEntry(e)));
+                total = entries?.length || 0;
+                loading.remove();
+                updateCount();
+            } catch {
+                loading.textContent = "留言載入失敗，請稍後再試。";
+                loading.classList.add("text-red-600");
+            }
+
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const formData = new FormData(form);
+
+                if (String(formData.get("website") ?? "") !== "") {
+                    form.reset();
+                    setStatus("已送出，謝謝！");
+                    return;
+                }
+
+                const name = String(formData.get("name") ?? "").trim();
+                const message = String(formData.get("message") ?? "").trim();
+
+                if (!name || !message) {
+                    setStatus("請填寫名字與留言內容。", true);
+                    return;
+                }
+
+                const avatar_url =
+                    currentUser?.user_metadata?.avatar_url || DEFAULT_AVATAR;
+                const user_id = currentUser ? currentUser.id : null;
+
+                try {
+                    const last = Number(
+                        localStorage.getItem(COOLDOWN_KEY) ?? 0,
+                    );
+                    const elapsed = Date.now() - last;
+                    const wait = COOLDOWN_MS - elapsed;
+                    if (wait > 0) {
+                        setStatus(
+                            `請等 ${Math.ceil(wait / 1000)} 秒後再留言。`,
+                            true,
+                        );
+                        return;
+                    }
+                } catch {}
+
+                button.disabled = true;
+                setStatus("送出中…");
+                try {
+                    const { data: inserted, error } = await supabase
+                        .from("guestbook")
+                        .insert([
+                            {
+                                page,
+                                name,
+                                message,
+                                avatar_url,
+                                user_id,
+                            },
+                        ])
+                        .select()
+                        .single();
+
+                    if (error) throw error;
+
+                    try {
+                        localStorage.setItem(COOLDOWN_KEY, String(Date.now()));
+                    } catch {}
+
+                    form.reset();
+                    counter.textContent = "0 / 500";
+
+                    if (currentUser) {
+                        nameInput.value =
+                            currentUser.user_metadata.full_name ||
+                            currentUser.user_metadata.user_name ||
+                            "";
+                    }
+
+                    if (MODERATED) {
+                        setStatus("已送出，審核後會顯示，謝謝！");
+                    } else {
+                        list.prepend(renderEntry(inserted));
+                        total += 1;
+                        updateCount();
+                        setStatus("已送出，謝謝！");
+                    }
+                } catch {
+                    setStatus("送出失敗，請稍後再試。", true);
+                } finally {
+                    button.disabled = false;
+                }
+            });
+        });
+</script>

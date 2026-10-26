@@ -8,21 +8,61 @@ import Header from '../../components/Header.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
 import '@fontsource/anton';
 import '@fontsource/roboto-mono';
-import { ArrowUpRight, Search } from '@lucide/astro'
+import { ArrowUpRight, Search } from '@lucide/astro';
+import { createClient } from '@supabase/supabase-js';
+import { marked } from 'marked';
 
-const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
-    (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+// 1. 讀取本地 Content Collection 文章
+const localPosts = await getCollection('blog', ({ data }) => !data.draft);
+const formattedLocalPosts = localPosts.map((post) => ({
+    id: post.id,
+    title: post.data.title,
+    description: post.data.description,
+    pubDate: post.data.pubDate,
+    heroImage: post.data.heroImage,
+    tags: post.data.tags || [],
+    isRemote: false,
+}));
+
+// 2. 從 Supabase 讀取線上文章（需確保環境變數已設定）
+const supabaseUrl = import.meta.env.SUPABASE_URL || process.env.SUPABASE_URL || '';
+const supabaseKey = import.meta.env.SUPABASE_KEY || process.env.SUPABASE_KEY || '';
+
+let remotePosts: any[] = [];
+if (supabaseUrl && supabaseKey) {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .order('pub_date', { ascending: false });
+
+    if (!error && data) {
+        remotePosts = data.map((item) => ({
+            id: `supabase-${item.id}`,
+            title: item.title,
+            description: item.description || '',
+            pubDate: new Date(item.pub_date || item.created_at),
+            heroImage: item.hero_image || null,
+            tags: Array.isArray(item.tags) ? item.tags : (item.tags ? item.tags.split(',') : []),
+            contentHtml: marked.parse(item.content || ''), // 將 Supabase 的 Markdown 轉換成 HTML
+            isRemote: true,
+        }));
+    }
+}
+
+// 3. 合併本地與 Supabase 文章，並依日期由新到舊排序
+const posts = [...formattedLocalPosts, ...remotePosts].sort(
+    (a, b) => b.pubDate.valueOf() - a.pubDate.valueOf(),
 );
 
-
-// 將最新文章獨立出來：第一篇為 latestPost，其餘為 otherPosts
+// 將最新文章獨立出來
 const latestPost = posts[0];
 const otherPosts = posts;
 
-// 統計每個 tag 出現次數（包含 latestPost），取前 5
+// 統計每個 tag 出現次數，取前 5
 const tagCount = new Map<string, number>();
 for (const post of posts) {
-    for (const tag of post.data.tags) {
+    for (const tag of post.tags) {
         const key = tag.trim().toLowerCase();
         tagCount.set(key, (tagCount.get(key) ?? 0) + 1);
     }
@@ -34,10 +74,10 @@ const topTags = [...tagCount.entries()]
 
 // 篩選與搜尋用的資料
 const tagsOf = (post: (typeof posts)[number]) =>
-    post.data.tags.map((t) => t.trim().toLowerCase()).join('|');
+    post.tags.map((t: string) => t.trim().toLowerCase()).join('|');
 
 const searchTextOf = (post: (typeof posts)[number]) =>
-    [post.data.title, post.data.description, ...post.data.tags].join(' ').toLowerCase();
+    [post.title, post.description, ...post.tags].join(' ').toLowerCase();
 ---
 
 <!doctype html>
@@ -56,20 +96,18 @@ const searchTextOf = (post: (typeof posts)[number]) =>
                     <span class="text-[#6600FF]">BLOG ARCHIVE</span>
                 </div>
 
-                {/* 1. 最新文章獨立區塊 (Featured / Latest Edition) */}
+                {/* 1. 最新文章獨立區塊 */}
                 {latestPost && (
                     <section>
                         <a
-                            href={`/blog/${latestPost.id}/`}
+                            href={latestPost.isRemote ? `/blog/supabase-${latestPost.id}` : `/blog/${latestPost.id}/`}
                             class="group grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 sm:p-8"
                         >
                             {/* 大封面圖 */}
-                            {latestPost.data.heroImage ? (
+                            {latestPost.heroImage ? (
                                 <div class="lg:col-span-7 h-[280px] sm:h-[360px] overflow-hidden bg-gray-100 border border-black/10 dark:border-white/10">
-                                    <Image
-                                        width={1020}
-                                        height={510}
-                                        src={latestPost.data.heroImage}
+                                    <img
+                                        src={latestPost.heroImage}
                                         alt=""
                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                     />
@@ -84,14 +122,14 @@ const searchTextOf = (post: (typeof posts)[number]) =>
                             <div class="lg:col-span-5 flex flex-col justify-between space-y-4">
                                 <div class="space-y-3">
                                     <p class="text-xs text-[#6600FF] font-bold uppercase tracking-wider">
-                                        <FormattedDate date={latestPost.data.pubDate} />
+                                        <FormattedDate date={latestPost.pubDate} />
                                     </p>
                                     <h1 class="font-['anton'] text-3xl sm:text-6xl uppercase tracking-wide group-hover:text-[#6600FF] transition-colors leading-tight">
-                                        {latestPost.data.title}
+                                        {latestPost.title}
                                     </h1>
-                                    {latestPost.data.description && (
+                                    {latestPost.description && (
                                         <p class="font-['cormorant_garamond'] italic text-sm text-neutral-600 dark:text-neutral-400 line-clamp-3 leading-relaxed">
-                                            {latestPost.data.description}
+                                            {latestPost.description}
                                         </p>
                                     )}
                                 </div>
@@ -104,7 +142,6 @@ const searchTextOf = (post: (typeof posts)[number]) =>
                         </a>
                     </section>
                 )}
-
 
                 {/* 2. 其餘文章列表網格與分頁 */}
                 {otherPosts.length > 0 && (
@@ -174,17 +211,15 @@ const searchTextOf = (post: (typeof posts)[number]) =>
                                         class={`transition-all duration-300 hover:-translate-y-1 ${rotateClass} ${hoverRotate}`}
                                     >
                                         <a
-                                            href={`/blog/${post.id}/`}
+                                            href={post.isRemote ? `/blog/${post.id}` : `/blog/${post.id}/`}
                                             class="group flex flex-col p-4 h-full border border-black/10 shadow-sm transition-all duration-300 hover:bg-white hover:shadow-lg hover:border-[#6600FF]"
                                         >
-                                            {post.data.heroImage ? (
-                                                <div class="w-full h-[200px] overflow-hidden  dark:bg-neutral-800 border border-black/10 dark:border-white/10 mb-4">
-                                                    <Image
-                                                        width={720}
-                                                        height={360}
-                                                        src={post.data.heroImage}
+                                            {post.heroImage ? (
+                                                <div class="w-full h-[200px] overflow-hidden dark:bg-neutral-800 border border-black/10 dark:border-white/10 mb-4">
+                                                    <img
+                                                        src={post.heroImage}
                                                         alt=""
-                                                        class="w-full h-full object-cover  group-hover:scale-105 transition-all duration-500"
+                                                        class="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
                                                     />
                                                 </div>
                                             ) : (
@@ -195,7 +230,7 @@ const searchTextOf = (post: (typeof posts)[number]) =>
 
                                             <div class="mb-2 flex items-center justify-between font-['roboto_mono'] text-[10px] font-bold uppercase tracking-wider">
                                                 <span class="text-[#6600FF]">
-                                                    <FormattedDate date={post.data.pubDate} />
+                                                    <FormattedDate date={post.pubDate} />
                                                 </span>
                                                 <span class="text-neutral-400 transition-colors group-hover:text-[#6600FF]">
                                                     {String(index + 1).padStart(2, '0')}
@@ -203,11 +238,11 @@ const searchTextOf = (post: (typeof posts)[number]) =>
                                             </div>
 
                                             <h2 class="font-['Anton'] text-2xl uppercase tracking-wide group-hover:text-[#6600FF] transition-colors line-clamp-2">
-                                                {post.data.title}
+                                                {post.title}
                                             </h2>
 
                                             <span class="mt-2 font-['cormorant_garamond'] italic text-sm text-neutral-600 line-clamp-3">
-                                                {post.data.description}
+                                                {post.description}
                                             </span>
 
                                             <div class="mt-auto pt-6 flex items-center justify-between font-['roboto_mono'] text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 group-hover:text-[#6600FF]">
@@ -258,7 +293,6 @@ const searchTextOf = (post: (typeof posts)[number]) =>
             document.querySelector<HTMLInputElement>('input[name="tag-filter"]:checked')?.value ?? 'all'
         const terms = (searchInput?.value ?? '').trim().toLowerCase().split(/\s+/).filter(Boolean)
 
-        // 1. 先篩選出符合條件的元素
         const matchedItems: HTMLElement[] = []
         items.forEach((el) => {
             const tags = (el.dataset.tags ?? '').split('|')
@@ -278,12 +312,10 @@ const searchTextOf = (post: (typeof posts)[number]) =>
         const totalMatched = matchedItems.length
         const totalPages = Math.ceil(totalMatched / PAGE_SIZE) || 1
 
-        // 確保當前頁碼不超過總頁數
         if (currentPage > totalPages) {
             currentPage = 1
         }
 
-        // 2. 處理分頁顯示
         const startIndex = (currentPage - 1) * PAGE_SIZE
         const endIndex = startIndex + PAGE_SIZE
 
@@ -295,10 +327,8 @@ const searchTextOf = (post: (typeof posts)[number]) =>
             }
         })
 
-        // 3. 渲染分頁按鈕
         renderPagination(totalPages)
 
-        // 4. 顯示或隱藏無資料狀態
         emptyState?.classList.toggle('hidden', totalMatched > 0)
         if (paginationContainer) {
             paginationContainer.classList.toggle('hidden', totalPages <= 1)
@@ -314,7 +344,6 @@ const searchTextOf = (post: (typeof posts)[number]) =>
 
         let html = ''
 
-        // 上一頁按鈕
         html += `
             <button 
                 type="button" 
@@ -326,7 +355,6 @@ const searchTextOf = (post: (typeof posts)[number]) =>
             </button>
         `
 
-        // 頁碼按鈕（套用與上方標籤一致的微傾斜率與主題色風格）
         for (let i = 1; i <= totalPages; i++) {
             const isActive = i === currentPage
             const activeClass = isActive
@@ -344,7 +372,6 @@ const searchTextOf = (post: (typeof posts)[number]) =>
             `
         }
 
-        // 下一頁按鈕
         html += `
             <button 
                 type="button" 
@@ -358,21 +385,18 @@ const searchTextOf = (post: (typeof posts)[number]) =>
 
         paginationContainer.innerHTML = html
 
-        // 綁定分頁點擊事件
         paginationContainer.querySelectorAll('button[data-page]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const targetPage = parseInt(btn.getAttribute('data-page') ?? '1', 10)
                 if (!isNaN(targetPage)) {
                     currentPage = targetPage
                     applyFilter()
-                    // 點擊後平滑滾動回文章列表頂部
                     document.getElementById('post-search')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
                 }
             })
         })
     }
 
-    // 事件監聽
     radios.forEach((radio) => radio.addEventListener('change', () => {
         currentPage = 1
         applyFilter()
@@ -388,6 +412,5 @@ const searchTextOf = (post: (typeof posts)[number]) =>
         applyFilter()
     })
 
-    // 初始化執行一次
     applyFilter()
 </script>

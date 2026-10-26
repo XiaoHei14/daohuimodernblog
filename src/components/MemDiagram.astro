@@ -1,0 +1,201 @@
+---
+// src/components/MemDiagram.astro
+interface Cell { label: string; value?: string }
+interface Row {
+  id?: string;
+  label?: string;
+  value?: string;
+  cells?: Cell[];
+  addr?: string;
+  note?: string;
+  color?: string;
+  hl?: boolean;
+  h?: number;
+  group?: number;
+}
+interface GroupDef { x: number; y: number; w?: number }
+interface Arrow {
+  from: string;
+  to: string;
+  label?: string;
+  midOffset?: number;
+}
+interface Bracket {
+  from: string;
+  to: string;
+  label: string;
+  side?: "left" | "right";
+}
+interface Props {
+  rows: Row[];
+  groups?: GroupDef[];
+  arrows?: Arrow[];
+  brackets?: Bracket[];
+  title?: string;
+  width?: number;
+  boxW?: number;
+}
+
+const {
+  rows,
+  groups,
+  arrows = [],
+  brackets = [],
+  title,
+  width = 600,
+  boxW = 220,
+} = Astro.props;
+
+const unit = 44;
+const top = title ? 48 : 12;
+const g: GroupDef[] = groups ?? [{ x: 150, y: top }];
+
+const cursors = g.map((gr) => gr.y);
+const laid = rows.map((r) => {
+  const gi = r.group ?? 0;
+  const gx = g[gi]?.x ?? 150;
+  const gw = g[gi]?.w ?? boxW;
+  const h = unit * (r.h ?? 1);
+  const y = cursors[gi];
+  cursors[gi] = y + h;
+  // 有填色的格子，文字固定用深色，確保在淺色 pastel 背景上可讀
+  const textFill = r.color ? "#1a1a1a" : "var(--ink)";
+  return { ...r, x: gx, w: gw, y, h, textFill };
+});
+
+const byId = new Map(laid.filter((r) => r.id).map((r) => [r.id as string, r]));
+const contentBottom = Math.max(...cursors, top) + 12;
+
+// 依最長的 note 文字動態加寬畫布，避免右側中文註解被裁掉
+const maxNoteLen = Math.max(0, ...laid.map((r) => r.note?.length ?? 0));
+const noteStartX = laid.length ? Math.max(...laid.map((r) => r.x + r.w)) + 16 : width;
+const neededWidth = noteStartX + maxNoteLen * 14 + 20;
+const finalWidth = Math.max(width, neededWidth);
+const height = contentBottom;
+
+function arrowPath(a: Arrow) {
+  const from = byId.get(a.from);
+  const to = byId.get(a.to);
+  if (!from || !to) return null;
+  const srcX = from.x + from.w, srcY = from.y + from.h / 2;
+  const tgtX = to.x, tgtY = to.y + to.h / 2;
+  const midX = srcX + (a.midOffset ?? 24);
+  return `M ${srcX} ${srcY} L ${midX} ${srcY} L ${midX} ${tgtY} L ${tgtX} ${tgtY}`;
+}
+
+function bracketGeom(b: Bracket) {
+  const from = byId.get(b.from);
+  const to = byId.get(b.to);
+  if (!from || !to) return null;
+  const side = b.side ?? "left";
+  const x = side === "left" ? from.x - 14 : from.x + from.w + 14;
+  const y1 = from.y, y2 = to.y + to.h;
+  const tick = side === "left" ? -6 : 6;
+  return { d: `M ${x + tick} ${y1} L ${x} ${y1} L ${x} ${y2} L ${x + tick} ${y2}`, x, ym: (y1 + y2) / 2, side };
+}
+---
+
+<figure class="not-prose memdiag-wrap">
+  <svg viewBox={`0 0 ${finalWidth} ${height}`} role="img" aria-label={title ?? "memory diagram"} class="memdiag">
+    <defs>
+      <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L6,3 L0,6 Z" fill="currentColor" />
+      </marker>
+    </defs>
+
+    {title && <text x={finalWidth / 2} y="26" text-anchor="middle" class="t-title">{title}</text>}
+
+    {laid.map((r) => (
+      <g>
+        {r.cells ? (
+          r.cells.map((c, i) => {
+            const cw = r.w / r.cells!.length;
+            const cx = r.x + i * cw;
+            return (
+              <Fragment>
+                <rect x={cx} y={r.y} width={cw} height={r.h}
+                      fill={r.color ?? "var(--bg)"}
+                      stroke={r.hl ? "var(--accent)" : "var(--ink)"}
+                      stroke-width={r.hl ? 2.5 : 1.5} />
+                <text x={cx + cw / 2} y={r.y + r.h / 2 + 5} text-anchor="middle" class="t-label" style={`fill:${r.textFill}`}>
+                  {c.label}{c.value ? ` ${c.value}` : ""}
+                </text>
+              </Fragment>
+            );
+          })
+        ) : (
+          <rect x={r.x} y={r.y} width={r.w} height={r.h}
+                fill={r.color ?? "var(--bg)"}
+                stroke={r.hl ? "var(--accent)" : "var(--ink)"}
+                stroke-width={r.hl ? 2.5 : 1.5} />
+        )}
+        {r.addr && <text x={r.x - 10} y={r.y + r.h / 2 + 5} text-anchor="end" class="t-addr">{r.addr}</text>}
+        {!r.cells && (
+          <text x={r.x + r.w / 2} y={r.y + r.h / 2 + 5} text-anchor="middle" class="t-label" style={`fill:${r.textFill}`}>
+            {r.label}{r.value ? ` ${r.value}` : ""}
+          </text>
+        )}
+        {r.note && <text x={r.x + r.w + 16} y={r.y + r.h / 2 + 5} class="t-note">← {r.note}</text>}
+      </g>
+    ))}
+
+    {arrows.map((a) => {
+      const d = arrowPath(a);
+      if (!d) return null;
+      const from = byId.get(a.from)!;
+      return (
+        <g>
+          <path d={d} fill="none" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+          {a.label && (
+            <text x={from.x + from.w + (a.midOffset ?? 24) + 6}
+                  y={from.y + from.h / 2 - 6} class="t-note">{a.label}</text>
+          )}
+        </g>
+      );
+    })}
+
+    {brackets.map((b) => {
+      const p = bracketGeom(b);
+      if (!p) return null;
+      return (
+        <g>
+          <path d={p.d} fill="none" stroke="var(--ink)" stroke-width="1.5" />
+          <text x={p.side === "left" ? p.x - 10 : p.x + 10} y={p.ym + 5}
+                text-anchor={p.side === "left" ? "end" : "start"} class="t-label">{b.label}</text>
+        </g>
+      );
+    })}
+  </svg>
+</figure>
+
+<style>
+  .memdiag-wrap {
+    margin: 2rem 0;
+    display: flex;
+    justify-content: center;
+  }
+  .memdiag {
+    width: 100%;
+    max-width: 100%;
+    color: var(--ink);
+  }
+  .memdiag text {
+    fill: var(--ink);
+    font-family: "Roboto Mono", ui-monospace, monospace;
+    font-size: 13px;
+  }
+  .t-title {
+    font-family: "Anton", var(--sans-heavy);
+    font-size: 18px;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    fill: var(--ink);
+  }
+  .t-addr {
+    font-size: 11px;
+    opacity: 0.55;
+  }
+  .t-note {
+    fill: var(--accent) !important;
+  }
+</style>

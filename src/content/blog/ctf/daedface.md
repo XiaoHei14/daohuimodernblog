@@ -1,6 +1,6 @@
 ---
 title: 'DEADFACE CTF Writeup'
-description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
+description: 'This is a deadface ctf writeup'
 author:
   - 'DaoHui'
 pubDate: 'Oct 18 2026'
