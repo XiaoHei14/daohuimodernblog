@@ -3,7 +3,6 @@ import { getEntry, render } from 'astro:content';
 import BlogPost from '../../layouts/BlogPost.astro';
 import { createSupabaseServerClient } from '../../lib/supabase-server';
 import { marked } from 'marked';
-import DOMPurify from 'isomorphic-dompurify';
 
 export const prerender = false;
 
@@ -31,7 +30,6 @@ let LocalContent: any = null;
 let minutesRead = 1;
 
 if (isSupabasePost) {
-    // Supabase 文章網址格式：/blog/supabase-<文章 UUID>
     const id = slug.slice('supabase-'.length);
     if (!id) {
         return new Response('Not Found', { status: 404 });
@@ -63,10 +61,8 @@ if (isSupabasePost) {
     }
 
     const markdown = data.content ?? '';
-    const parsedHtml = await marked.parse(markdown);
-    
-    // ✅ 已修正：改用 DOMPurify.sanitize
-    const contentHtml = DOMPurify.sanitize(parsedHtml);
+    // 直接透過 marked 解析，完全不依賴會出事的 DOMPurify / sanitize-html
+    const contentHtml = await marked.parse(markdown);
 
     remotePost = {
         title: data.title,
@@ -78,7 +74,6 @@ if (isSupabasePost) {
         content: markdown,
     };
 
-    // 最佳化字數計算與閱讀時間估算
     const cleanMarkdown = markdown
         .replace(/!\[.*?\]\(.*?\)/g, '')
         .replace(/\[([^\]]+)\]\(.*?\)/g, '$1')
@@ -89,7 +84,6 @@ if (isSupabasePost) {
     minutesRead = Math.max(1, Math.ceil(wordCount / 400));
 
 } else {
-    // 本地 Markdown / MDX 文章
     try {
         localPost = await getEntry('blog', slug);
     } catch (error) {
