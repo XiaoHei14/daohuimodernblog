@@ -1,0 +1,65 @@
+---
+import BaseHead from '../../../components/BaseHead.astro';
+import Header from '../../../components/Header.astro';
+import Footer from '../../../components/Footer.astro';
+
+export const prerender = false;
+---
+<!doctype html>
+<html lang="zh-Hant">
+<head><BaseHead title="New Post" description="Create a DaoHui Blog post" /></head>
+<body class="min-h-screen flex flex-col justify-between bg-[#DDF1FF] font-['roboto-mono'] text-black dark:bg-[#09090B] dark:text-[#F5F3ED]">
+<div class="px-6 py-8 md:px-12"><Header /><main class="mx-auto mt-10 max-w-[1000px]">
+<p class="mb-2 text-xs text-[#6600FF]">DASHBOARD / CREATE</p><h1 class="mb-8 font-['anton'] text-5xl sm:text-7xl">NEW POST</h1>
+<form id="post-form" class="space-y-6">
+<div class="grid gap-5 md:grid-cols-2">
+<label class="block text-xs uppercase tracking-wider">Title *<input name="title" required maxlength="200" class="mt-2 w-full border border-black/20 bg-transparent px-4 py-3 outline-none focus:border-[#6600FF] dark:border-white/20" /></label>
+<label class="block text-xs uppercase tracking-wider">Slug *<input name="slug" required pattern="[a-z0-9]+(-[a-z0-9]+)*" maxlength="120" placeholder="my-new-post" class="mt-2 w-full border border-black/20 bg-transparent px-4 py-3 outline-none focus:border-[#6600FF] dark:border-white/20" /><span class="mt-1 block text-[10px] normal-case text-neutral-500">小寫英數字與連字號，不要空白。</span></label>
+</div>
+<label class="block text-xs uppercase tracking-wider">Description<textarea name="description" rows="2" class="mt-2 w-full border border-black/20 bg-transparent px-4 py-3 outline-none focus:border-[#6600FF] dark:border-white/20"></textarea></label>
+<label class="block text-xs uppercase tracking-wider">Hero image URL<input name="hero_image" type="url" placeholder="https://..." class="mt-2 w-full border border-black/20 bg-transparent px-4 py-3 outline-none focus:border-[#6600FF] dark:border-white/20" /></label>
+<label class="block text-xs uppercase tracking-wider">Tags<input name="tags" placeholder="security, astro, research" class="mt-2 w-full border border-black/20 bg-transparent px-4 py-3 outline-none focus:border-[#6600FF] dark:border-white/20" /><span class="mt-1 block text-[10px] normal-case text-neutral-500">以逗號分隔。</span></label>
+<label class="block text-xs uppercase tracking-wider">Content (Markdown) *<textarea name="content" required rows="18" class="mt-2 w-full border border-black/20 bg-transparent px-4 py-3 font-mono text-sm outline-none focus:border-[#6600FF] dark:border-white/20" placeholder="# Heading&#10;&#10;Write your article in Markdown..."></textarea></label>
+<label class="flex items-center gap-3 text-sm"><input name="published" type="checkbox" class="accent-[#6600FF]" /> 立即發布</label>
+<p id="form-message" role="status" class="hidden text-sm"></p>
+<div class="flex flex-wrap gap-3"><button type="submit" class="bg-[#6600FF] px-5 py-3 text-xs font-bold text-white">SAVE POST →</button><a href="/dashboard/posts" class="border border-black/20 px-5 py-3 text-xs dark:border-white/20">CANCEL</a></div>
+</form>
+</main></div><Footer />
+<script>
+const form = document.querySelector<HTMLFormElement>('#post-form');
+const message = document.querySelector<HTMLElement>('#form-message');
+const slugInput = form?.elements.namedItem('slug') as HTMLInputElement | null;
+const titleInput = form?.elements.namedItem('title') as HTMLInputElement | null;
+titleInput?.addEventListener('input', () => {
+  if (slugInput && !slugInput.dataset.edited) {
+    slugInput.value = titleInput.value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+});
+slugInput?.addEventListener('input', () => { if (slugInput) slugInput.dataset.edited = 'true'; });
+form?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  if (!form || !message) return;
+  const data = new FormData(form);
+  const payload = {
+    title: String(data.get('title') ?? ''),
+    slug: String(data.get('slug') ?? ''),
+    description: String(data.get('description') ?? ''),
+    hero_image: String(data.get('hero_image') ?? ''),
+    tags: String(data.get('tags') ?? '').split(',').map(v => v.trim()).filter(Boolean),
+    content: String(data.get('content') ?? ''),
+    published: data.get('published') === 'on',
+  };
+  message.classList.remove('hidden');
+  message.textContent = 'Saving...';
+  try {
+    const response = await fetch('/api/admin/posts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error ?? 'Could not save post.');
+    window.location.href = `/dashboard/posts/${result.post.id}?saved=1`;
+  } catch (error) {
+    message.textContent = error instanceof Error ? error.message : 'Could not save post.';
+    message.classList.add('text-red-600');
+  }
+});
+</script>
+</body></html>

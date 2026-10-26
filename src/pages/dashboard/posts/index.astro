@@ -1,0 +1,20 @@
+---
+import BaseHead from '../../../components/BaseHead.astro';
+import Header from '../../../components/Header.astro';
+import Footer from '../../../components/Footer.astro';
+import { createSupabaseServerClient } from '../../../lib/supabase-server';
+
+export const prerender = false;
+
+const supabase = createSupabaseServerClient(Astro.cookies, Astro.request);
+const { data: posts, error } = await supabase.from('posts').select('id, slug, title, published, pub_date, updated_at').order('created_at', { ascending: false });
+---
+<!doctype html>
+<html lang="zh-Hant">
+<head><BaseHead title="Manage Posts" description="Manage DaoHui Blog posts" /></head>
+<body class="min-h-screen flex flex-col justify-between bg-[#DDF1FF] font-['roboto-mono'] text-black dark:bg-[#09090B] dark:text-[#F5F3ED]">
+<div class="px-6 py-8 md:px-12"><Header /><main class="mx-auto mt-10 max-w-[1200px]">
+<div class="mb-8 flex items-end justify-between border-b border-black/20 pb-5 dark:border-white/20"><div><p class="mb-2 text-xs text-[#6600FF]">DASHBOARD / CONTENT</p><h1 class="font-['anton'] text-5xl sm:text-7xl">POSTS</h1></div><a href="/dashboard/posts/new" class="bg-[#6600FF] px-4 py-3 text-xs font-bold text-white">+ NEW POST</a></div>
+{error ? <p class="text-sm text-red-600">無法讀取文章：{error.message}</p> : posts?.length ? <div class="overflow-x-auto"><table class="w-full border-collapse text-left text-sm"><thead><tr class="border-b border-black/30 text-xs text-neutral-500 dark:border-white/30"><th class="py-3 pr-4">TITLE</th><th class="py-3 pr-4">SLUG</th><th class="py-3 pr-4">STATUS</th><th class="py-3">ACTION</th></tr></thead><tbody>{posts.map(post => <tr class="border-b border-black/10 dark:border-white/10"><td class="py-4 pr-4 font-bold">{post.title}</td><td class="py-4 pr-4 text-xs">{post.slug}</td><td class="py-4 pr-4 text-xs">{post.published ? 'PUBLISHED' : 'DRAFT'}</td><td class="py-4"><a class="text-[#6600FF] hover:underline" href={`/dashboard/posts/${post.id}`}>EDIT →</a></td></tr>)}</tbody></table></div> : <p class="py-8 text-sm text-neutral-500">尚無文章。</p>}
+<p class="mt-8 text-xs"><a href="/dashboard" class="text-[#6600FF]">← BACK TO DASHBOARD</a></p>
+</main></div><Footer /></body></html>

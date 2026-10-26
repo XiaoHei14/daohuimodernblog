@@ -1,0 +1,81 @@
+---
+import BaseHead from '../../../components/BaseHead.astro';
+import Header from '../../../components/Header.astro';
+import Footer from '../../../components/Footer.astro';
+import { createSupabaseServerClient } from '../../../lib/supabase-server';
+
+export const prerender = false;
+
+const id = Astro.params.id ?? '';
+const supabase = createSupabaseServerClient(Astro.cookies, Astro.request);
+const { data: post, error } = await supabase.from('posts').select('*').eq('id', id).maybeSingle();
+---
+<!doctype html>
+<html lang="zh-Hant">
+<head><BaseHead title={post ? `Edit ${post.title}` : 'Edit Post'} description="Edit a DaoHui Blog post" /></head>
+<body class="min-h-screen flex flex-col justify-between bg-[#DDF1FF] font-['roboto-mono'] text-black dark:bg-[#09090B] dark:text-[#F5F3ED]">
+<div class="px-6 py-8 md:px-12"><Header /><main class="mx-auto mt-10 max-w-[1000px]">
+{error || !post ? <><h1 class="font-['anton'] text-5xl">POST NOT FOUND</h1><p class="mt-4 text-sm">文章不存在或無法讀取。</p><a href="/dashboard/posts" class="mt-6 inline-block text-xs text-[#6600FF]">← BACK TO POSTS</a></> : <>
+<p class="mb-2 text-xs text-[#6600FF]">DASHBOARD / EDIT</p><h1 class="mb-8 font-['anton'] text-5xl sm:text-7xl">EDIT POST</h1>
+<form id="post-form" data-id={post.id} class="space-y-6">
+<div class="grid gap-5 md:grid-cols-2">
+<label class="block text-xs uppercase tracking-wider">Title *<input name="title" required maxlength="200" value={post.title} class="mt-2 w-full border border-black/20 bg-transparent px-4 py-3 outline-none focus:border-[#6600FF] dark:border-white/20" /></label>
+<label class="block text-xs uppercase tracking-wider">Slug *<input name="slug" required pattern="[a-z0-9]+(-[a-z0-9]+)*" maxlength="120" value={post.slug} class="mt-2 w-full border border-black/20 bg-transparent px-4 py-3 outline-none focus:border-[#6600FF] dark:border-white/20" /></label>
+</div>
+<label class="block text-xs uppercase tracking-wider">Description<textarea name="description" rows="2" class="mt-2 w-full border border-black/20 bg-transparent px-4 py-3 outline-none focus:border-[#6600FF] dark:border-white/20">{post.description ?? ''}</textarea></label>
+<label class="block text-xs uppercase tracking-wider">Hero image URL<input name="hero_image" type="url" value={post.hero_image ?? ''} class="mt-2 w-full border border-black/20 bg-transparent px-4 py-3 outline-none focus:border-[#6600FF] dark:border-white/20" /></label>
+<label class="block text-xs uppercase tracking-wider">Tags<input name="tags" value={Array.isArray(post.tags) ? post.tags.join(', ') : ''} class="mt-2 w-full border border-black/20 bg-transparent px-4 py-3 outline-none focus:border-[#6600FF] dark:border-white/20" /></label>
+<label class="block text-xs uppercase tracking-wider">Content (Markdown) *<textarea name="content" required rows="18" class="mt-2 w-full border border-black/20 bg-transparent px-4 py-3 font-mono text-sm outline-none focus:border-[#6600FF] dark:border-white/20">{post.content ?? ''}</textarea></label>
+<label class="flex items-center gap-3 text-sm"><input name="published" type="checkbox" checked={post.published} class="accent-[#6600FF]" /> Published</label>
+<p id="form-message" role="status" class="hidden text-sm"></p>
+<div class="flex flex-wrap gap-3"><button type="submit" class="bg-[#6600FF] px-5 py-3 text-xs font-bold text-white">SAVE CHANGES →</button><button id="delete-button" type="button" class="border border-red-500 px-5 py-3 text-xs text-red-600">DELETE POST</button><a href="/dashboard/posts" class="border border-black/20 px-5 py-3 text-xs dark:border-white/20">CANCEL</a></div>
+</form>
+</>}
+</main></div><Footer />
+{post && <script>
+const form = document.querySelector<HTMLFormElement>('#post-form');
+const message = document.querySelector<HTMLElement>('#form-message');
+const deleteButton = document.querySelector<HTMLButtonElement>('#delete-button');
+const id = form?.dataset.id;
+form?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  if (!form || !message || !id) return;
+  const data = new FormData(form);
+  const payload = {
+    title: String(data.get('title') ?? ''),
+    slug: String(data.get('slug') ?? ''),
+    description: String(data.get('description') ?? ''),
+    hero_image: String(data.get('hero_image') ?? ''),
+    tags: String(data.get('tags') ?? '').split(',').map(v => v.trim()).filter(Boolean),
+    content: String(data.get('content') ?? ''),
+    published: data.get('published') === 'on',
+  };
+  message.classList.remove('hidden', 'text-red-600');
+  message.textContent = 'Saving...';
+  try {
+    const response = await fetch(`/api/admin/posts/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error ?? 'Could not update post.');
+    message.textContent = 'Saved successfully.';
+  } catch (error) {
+    message.textContent = error instanceof Error ? error.message : 'Could not update post.';
+    message.classList.add('text-red-600');
+  }
+});
+deleteButton?.addEventListener('click', async () => {
+  if (!id || !confirm('確定永久刪除這篇文章？此操作無法復原。')) return;
+  try {
+    const response = await fetch(`/api/admin/posts/${id}`, { method: 'DELETE' });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error ?? 'Could not delete post.');
+    window.location.href = '/dashboard/posts?deleted=1';
+  } catch (error) {
+    if (message) {
+      message.classList.remove('hidden');
+      message.classList.add('text-red-600');
+      message.textContent = error instanceof Error ? error.message : 'Could not delete post.';
+    }
+  }
+});
+</script>}
+</body></html>
