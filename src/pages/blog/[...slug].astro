@@ -1,0 +1,150 @@
+---
+import { getEntry, render } from 'astro:content';
+import BlogPost from '../../layouts/BlogPost.astro';
+import { createSupabaseServerClient } from '../../lib/supabase-server';
+import { marked } from 'marked';
+import sanitizeHtml from 'sanitize-html';
+
+export const prerender = false;
+
+const slug = Astro.params.slug;
+if (!slug || !slug.trim()) {
+    return new Response('Not Found', { status: 404 });
+}
+
+const isSupabasePost = slug.startsWith('supabase-');
+
+type BlogPostData = {
+    title: string;
+    description: string;
+    pubDate: Date;
+    updatedDate?: Date;
+    heroImage?: string;
+    tags: string[];
+    contentHtml: string;
+    content: string;
+};
+
+let remotePost: BlogPostData | null = null;
+let localPost: any = null;
+let LocalContent: any = null;
+let minutesRead = 1;
+
+if (isSupabasePost) {
+    // Supabase 文章網址格式：/blog/supabase-<文章 UUID>
+    const id = slug.slice('supabase-'.length);
+    if (!id) {
+        return new Response('Not Found', { status: 404 });
+    }
+
+    const supabase = createSupabaseServerClient(
+        Astro.cookies,
+        Astro.request,
+    );
+
+    const { data, error } = await supabase
+        .from('posts')
+        .select('id, title, description, content, pub_date, hero_image, tags, published')
+        .eq('id', id)
+        .eq('published', true)
+        .maybeSingle();
+
+    if (error) {
+        console.error('[Blog] Supabase query failed:', {
+            code: error.code,
+            message: error.message,
+            slug,
+        });
+        return new Response('Internal Server Error', { status: 500 });
+    }
+
+    if (!data) {
+        return new Response('Not Found', { status: 404 });
+    }
+
+    const markdown = data.content ?? '';
+    const parsedHtml = await marked.parse(markdown);
+    
+    const contentHtml = sanitizeHtml(parsedHtml, {
+        allowedTags: [
+            ...sanitizeHtml.defaults.allowedTags,
+            'img', 'h1', 'h2', 'h3', 'h4', 'pre', 'code', 'hr', 'del', 'table', 'thead', 'tbody', 'tr', 'th', 'td',
+        ],
+        allowedAttributes: {
+            ...sanitizeHtml.defaults.allowedAttributes,
+            a: ['href', 'name', 'target', 'rel'],
+            img: ['src', 'alt', 'title', 'width', 'height', 'loading'],
+            code: ['class'],
+            pre: ['class'],
+            th: ['align'],
+            td: ['align'],
+        },
+        transformTags: {
+            a: sanitizeHtml.simpleTransform('a', {
+                target: '_blank',
+                rel: 'noopener noreferrer',
+            }),
+        },
+    });
+
+    remotePost = {
+        title: data.title,
+        description: data.description ?? '',
+        pubDate: data.pub_date ? new Date(data.pub_date) : new Date(),
+        heroImage: data.hero_image ?? undefined,
+        tags: Array.isArray(data.tags) ? data.tags : [],
+        contentHtml,
+        content: markdown,
+    };
+
+    // 最佳化字數計算與閱讀時間估算
+    const cleanMarkdown = markdown
+        .replace(/!\[.*?\]\(.*?\)/g, '')
+        .replace(/\[([^\]]+)\]\(.*?\)/g, '$1')
+        .replace(/[#*>\-_`~|[\]()]/g, ' ')
+        .trim();
+
+    const wordCount = cleanMarkdown.length;
+    minutesRead = Math.max(1, Math.ceil(wordCount / 400));
+
+} else {
+    // 本地 Markdown / MDX 文章
+    try {
+        localPost = await getEntry('blog', slug);
+    } catch (error) {
+        console.error('[Blog] Failed to load local article:', { slug, error });
+        return new Response('Internal Server Error', { status: 500 });
+    }
+
+    if (!localPost || localPost.data.draft) {
+        return new Response('Not Found', { status: 404 });
+    }
+
+    const rendered = await render(localPost);
+    LocalContent = rendered.Content;
+
+    const estimatedMinutes = Number(
+        rendered.remarkPluginFrontmatter?.minutesRead ?? 1,
+    );
+    minutesRead = Number.isFinite(estimatedMinutes) && estimatedMinutes > 0
+        ? Math.ceil(estimatedMinutes)
+        : 1;
+}
+---
+
+{
+    isSupabasePost && remotePost ? (
+        <BlogPost {...remotePost} minutesRead={minutesRead}>
+            <Fragment set:html={remotePost.contentHtml} />
+        </BlogPost>
+    ) : localPost && LocalContent ? (
+        <BlogPost {...localPost.data} minutesRead={minutesRead}>
+            <LocalContent />
+        </BlogPost>
+    ) : (
+        <main class="max-w-3xl mx-auto px-4 py-20 text-center">
+            <h1 class="text-4xl font-bold mb-4">Not Found</h1>
+            <p class="text-neutral-500">找不到這篇文章。</p>
+        </main>
+    )
+}
