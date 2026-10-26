@@ -7,10 +7,11 @@ import tailwindcss from "@tailwindcss/vite";
 import { unified } from "@astrojs/markdown-remark";
 import { remarkReadingTime } from './remark-reading-time.mjs';
 import vercel from "@astrojs/vercel";
-
+import node from '@astrojs/node';
 
 // https://astro.build/config
 export default defineConfig({
+    output: 'server',
     site: 'https://www.daohui.site',
     markdown: {
         remarkPlugins: [remarkReadingTime],
@@ -45,6 +46,8 @@ export default defineConfig({
     vite: {
         plugins: [tailwindcss()],
     },
-    adapter: vercel(),
+    adapter: node({
+        mode: 'standalone'
+    })
 
 });
