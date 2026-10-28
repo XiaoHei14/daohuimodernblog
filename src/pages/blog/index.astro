@@ -100,7 +100,7 @@ const searchTextOf = (post: (typeof posts)[number]) =>
                 {latestPost && (
                     <section>
                         <a
-                            href={latestPost.isRemote ? `/blog/supabase-${latestPost.id}` : `/blog/${latestPost.id}/`}
+                            href={latestPost.isRemote ? `/blog/${latestPost.id}` : `/blog/${latestPost.id}/`}
                             class="group grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 sm:p-8"
                         >
                             {/* 大封面圖 */}
