@@ -11,8 +11,6 @@ if (!slug || !slug.trim()) {
     return new Response('Not Found', { status: 404 });
 }
 
-const isSupabasePost = slug.startsWith('supabase-');
-
 type BlogPostData = {
     title: string;
     description: string;
@@ -28,73 +26,67 @@ let remotePost: BlogPostData | null = null;
 let localPost: any = null;
 let LocalContent: any = null;
 let minutesRead = 1;
+let isSupabasePost = false;
 
-if (isSupabasePost) {
-    const id = slug.slice('supabase-'.length);
-    if (!id) {
-        return new Response('Not Found', { status: 404 });
-    }
+// 1. 先嘗試從本地 Content Collection 讀取
+try {
+    localPost = await getEntry('blog', slug);
+} catch (error) {
+    // 略過錯誤，準備往下找 Supabase
+}
 
+// 2. 如果本地找不到，才去 Supabase 查詢
+if (!localPost || localPost.data.draft) {
     const supabase = createSupabaseServerClient(
         Astro.cookies,
         Astro.request,
     );
 
-    const { data, error } = await supabase
-        .from('posts')
-        .select('id, title, description, content, pub_date, hero_image, tags, published')
-        .eq('id', id)
-        .eq('published', true)
-        .maybeSingle();
+    // 支援透過自訂 slug 或是帶有 supabase- 前綴的 ID 查詢
+    const isIdQuery = slug.startsWith('supabase-');
+    const queryValue = isIdQuery ? slug.slice('supabase-'.length) : slug;
 
-    if (error) {
-        console.error('[Blog] Supabase query failed:', {
-            code: error.code,
-            message: error.message,
-            slug,
-        });
-        return new Response('Internal Server Error', { status: 500 });
+    if (queryValue) {
+        let query = supabase
+            .from('posts')
+            .select('id, title, description, content, pub_date, hero_image, tags, published, slug')
+            .eq('published', true);
+
+        if (isIdQuery) {
+            query = query.eq('id', queryValue);
+        } else {
+            query = query.eq('slug', queryValue);
+        }
+
+        const { data, error } = await query.maybeSingle();
+
+        if (!error && data) {
+            isSupabasePost = true;
+            const markdown = data.content ?? '';
+            const contentHtml = await marked.parse(markdown);
+
+            remotePost = {
+                title: data.title,
+                description: data.description ?? '',
+                pubDate: data.pub_date ? new Date(data.pub_date) : new Date(),
+                heroImage: data.hero_image ?? undefined,
+                tags: Array.isArray(data.tags) ? data.tags : [],
+                contentHtml,
+                content: markdown,
+            };
+
+            const cleanMarkdown = markdown
+                .replace(/!\[.*?\]\(.*?\)/g, '')
+                .replace(/\[([^\]]+)\]\(.*?\)/g, '$1')
+                .replace(/[#*>\-_`~|[\]()]/g, ' ')
+                .trim();
+
+            const wordCount = cleanMarkdown.length;
+            minutesRead = Math.max(1, Math.ceil(wordCount / 400));
+        }
     }
-
-    if (!data) {
-        return new Response('Not Found', { status: 404 });
-    }
-
-    const markdown = data.content ?? '';
-    // 直接透過 marked 解析，完全不依賴會出事的 DOMPurify / sanitize-html
-    const contentHtml = await marked.parse(markdown);
-
-    remotePost = {
-        title: data.title,
-        description: data.description ?? '',
-        pubDate: data.pub_date ? new Date(data.pub_date) : new Date(),
-        heroImage: data.hero_image ?? undefined,
-        tags: Array.isArray(data.tags) ? data.tags : [],
-        contentHtml,
-        content: markdown,
-    };
-
-    const cleanMarkdown = markdown
-        .replace(/!\[.*?\]\(.*?\)/g, '')
-        .replace(/\[([^\]]+)\]\(.*?\)/g, '$1')
-        .replace(/[#*>\-_`~|[\]()]/g, ' ')
-        .trim();
-
-    const wordCount = cleanMarkdown.length;
-    minutesRead = Math.max(1, Math.ceil(wordCount / 400));
-
 } else {
-    try {
-        localPost = await getEntry('blog', slug);
-    } catch (error) {
-        console.error('[Blog] Failed to load local article:', { slug, error });
-        return new Response('Internal Server Error', { status: 500 });
-    }
-
-    if (!localPost || localPost.data.draft) {
-        return new Response('Not Found', { status: 404 });
-    }
-
+    // 3. 本地文章存在，進行標準 Astro render
     const rendered = await render(localPost);
     LocalContent = rendered.Content;
 
@@ -104,6 +96,11 @@ if (isSupabasePost) {
     minutesRead = Number.isFinite(estimatedMinutes) && estimatedMinutes > 0
         ? Math.ceil(estimatedMinutes)
         : 1;
+}
+
+// 4. 如果兩邊都找不到，回傳 404
+if (!localPost && !remotePost) {
+    return new Response('Not Found', { status: 404 });
 }
 ---
 

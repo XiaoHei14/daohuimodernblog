@@ -3,7 +3,7 @@ title: 'Hello, World'
 description: 'Lorem ipsum dolor sit amet'
 author: ['DaoHui']
 pubDate: 'Jul 08 2022'
-heroImage: '../../assets/blogfirst.jpg'
+heroImage: 'https://i.pinimg.com/736x/90/91/1a/90911ab935c0c113982c1f31949a54cc.jpg'
 tags: ['style', 'life']
 
 ---

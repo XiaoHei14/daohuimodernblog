@@ -16,6 +16,7 @@ import { marked } from 'marked';
 const localPosts = await getCollection('blog', ({ data }) => !data.draft);
 const formattedLocalPosts = localPosts.map((post) => ({
     id: post.id,
+    slug: post.id, // 本地文章直接用 id 當作 slug 路由
     title: post.data.title,
     description: post.data.description,
     pubDate: post.data.pubDate,
@@ -37,16 +38,21 @@ if (supabaseUrl && supabaseKey) {
         .order('pub_date', { ascending: false });
 
     if (!error && data) {
-        remotePosts = data.map((item) => ({
-            id: `supabase-${item.id}`,
-            title: item.title,
-            description: item.description || '',
-            pubDate: new Date(item.pub_date || item.created_at),
-            heroImage: item.hero_image || null,
-            tags: Array.isArray(item.tags) ? item.tags : (item.tags ? item.tags.split(',') : []),
-            contentHtml: marked.parse(item.content || ''), // 將 Supabase 的 Markdown 轉換成 HTML
-            isRemote: true,
-        }));
+        remotePosts = data.map((item) => {
+            const postSlug = item.slug || item.id.toString(); 
+
+            return {
+                id: `supabase-${item.id}`,
+                slug: postSlug,
+                title: item.title,
+                description: item.description || '',
+                pubDate: new Date(item.pub_date || item.created_at),
+                heroImage: item.hero_image || null,
+                tags: Array.isArray(item.tags) ? item.tags : (item.tags ? item.tags.split(',') : []),
+                contentHtml: marked.parse(item.content || ''),
+                isRemote: true,
+            };
+        });
     }
 }
 
@@ -100,7 +106,7 @@ const searchTextOf = (post: (typeof posts)[number]) =>
                 {latestPost && (
                     <section>
                         <a
-                            href={latestPost.isRemote ? `/blog/${latestPost.id}` : `/blog/${latestPost.id}/`}
+                            href={`/blog/${latestPost.slug}/`}
                             class="group grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 sm:p-8"
                         >
                             {/* 大封面圖 */}
@@ -211,7 +217,7 @@ const searchTextOf = (post: (typeof posts)[number]) =>
                                         class={`transition-all duration-300 hover:-translate-y-1 ${rotateClass} ${hoverRotate}`}
                                     >
                                         <a
-                                            href={post.isRemote ? `/blog/${post.id}` : `/blog/${post.id}/`}
+                                            href={`/blog/${post.slug}/`}
                                             class="group flex flex-col p-4 h-full border border-black/10 shadow-sm transition-all duration-300 hover:bg-white hover:shadow-lg hover:border-[#6600FF]"
                                         >
                                             {post.heroImage ? (
