@@ -6,7 +6,7 @@ author:
 pubDate: 'Nov 6 2026'
 heroImage: 'https://i.pinimg.com/1200x/14/b9/9c/14b99c8247a7d7cdcdecdefe547123ea.jpg'
 tags: ['FJU', 'CSIE','University']
-draft: false
+draft: true
 ---
 
 # FJU特選心得
