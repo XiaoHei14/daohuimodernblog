@@ -1,21 +1,122 @@
 ---
-import { type CollectionEntry, getCollection, render } from 'astro:content';
+import { getEntry, render } from 'astro:content';
 import BlogPost from '../../layouts/BlogPost.astro';
-import { getPublishedPosts } from '../../utils/posts';
+import { createSupabaseServerClient } from '../../lib/supabase-server';
+import { marked } from 'marked';
 
-export async function getStaticPaths() {
-    const posts = await getPublishedPosts();
-    return posts.map((post) => ({
-        params: { slug: post.id },
-        props: post,
-    }));
+export const prerender = false;
+
+const slug = Astro.params.slug;
+if (!slug || !slug.trim()) {
+    return new Response('Not Found', { status: 404 });
 }
-type Props = CollectionEntry<'blog'>;
 
-const post = Astro.props;
-const { Content, remarkPluginFrontmatter } = await render(post);
+type BlogPostData = {
+    title: string;
+    description: string;
+    pubDate: Date;
+    updatedDate?: Date;
+    heroImage?: string;
+    tags: string[];
+    contentHtml: string;
+    content: string;
+};
+
+let remotePost: BlogPostData | null = null;
+let localPost: any = null;
+let LocalContent: any = null;
+let minutesRead = 1;
+let isSupabasePost = false;
+
+// 1. 先嘗試從本地 Content Collection 讀取
+try {
+    localPost = await getEntry('blog', slug);
+} catch (error) {
+    // 略過錯誤，準備往下找 Supabase
+}
+
+// 2. 如果本地找不到，才去 Supabase 查詢
+if (!localPost || localPost.data.draft) {
+    const supabase = createSupabaseServerClient(
+        Astro.cookies,
+        Astro.request,
+    );
+
+    // 支援透過自訂 slug 或是帶有 supabase- 前綴的 ID 查詢
+    const isIdQuery = slug.startsWith('supabase-');
+    const queryValue = isIdQuery ? slug.slice('supabase-'.length) : slug;
+
+    if (queryValue) {
+        let query = supabase
+            .from('posts')
+            .select('id, title, description, content, pub_date, hero_image, tags, published, slug')
+            .eq('published', true);
+
+        if (isIdQuery) {
+            query = query.eq('id', queryValue);
+        } else {
+            query = query.eq('slug', queryValue);
+        }
+
+        const { data, error } = await query.maybeSingle();
+
+        if (!error && data) {
+            isSupabasePost = true;
+            const markdown = data.content ?? '';
+            const contentHtml = await marked.parse(markdown);
+
+            remotePost = {
+                title: data.title,
+                description: data.description ?? '',
+                pubDate: data.pub_date ? new Date(data.pub_date) : new Date(),
+                heroImage: data.hero_image ?? undefined,
+                tags: Array.isArray(data.tags) ? data.tags : [],
+                contentHtml,
+                content: markdown,
+            };
+
+            const cleanMarkdown = markdown
+                .replace(/!\[.*?\]\(.*?\)/g, '')
+                .replace(/\[([^\]]+)\]\(.*?\)/g, '$1')
+                .replace(/[#*>\-_`~|[\]()]/g, ' ')
+                .trim();
+
+            const wordCount = cleanMarkdown.length;
+            minutesRead = Math.max(1, Math.ceil(wordCount / 400));
+        }
+    }
+} else {
+    // 3. 本地文章存在，進行標準 Astro render
+    const rendered = await render(localPost);
+    LocalContent = rendered.Content;
+
+    const estimatedMinutes = Number(
+        rendered.remarkPluginFrontmatter?.minutesRead ?? 1,
+    );
+    minutesRead = Number.isFinite(estimatedMinutes) && estimatedMinutes > 0
+        ? Math.ceil(estimatedMinutes)
+        : 1;
+}
+
+// 4. 如果兩邊都找不到，回傳 404
+if (!localPost && !remotePost) {
+    return new Response('Not Found', { status: 404 });
+}
 ---
 
-<BlogPost {...post.data} minutesRead={remarkPluginFrontmatter.minutesRead}>
-    <Content />
-</BlogPost>
+{
+    isSupabasePost && remotePost ? (
+        <BlogPost {...remotePost} minutesRead={minutesRead}>
+            <Fragment set:html={remotePost.contentHtml} />
+        </BlogPost>
+    ) : localPost && LocalContent ? (
+        <BlogPost {...localPost.data} minutesRead={minutesRead}>
+            <LocalContent />
+        </BlogPost>
+    ) : (
+        <main class="max-w-3xl mx-auto px-4 py-20 text-center">
+            <h1 class="text-4xl font-bold mb-4">Not Found</h1>
+            <p class="text-neutral-500">找不到這篇文章。</p>
+        </main>
+    )
+}

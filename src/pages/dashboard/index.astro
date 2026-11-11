@@ -1,16 +1,45 @@
 ---
-import "@fontsource/anton";
-import "@fontsource/roboto-mono";
-import "@fontsource/cormorant-garamond";
-import {BaseHead} from '../../components/BaseHead.astro'
----
+import BaseHead from '../../components/BaseHead.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import { createSupabaseServerClient } from '../../lib/supabase-server';
 
-<head>
-    <BaseHead title="Dashboard" description="This DaoHui Blog Dashboard" />
-</head>
-<body
-    class="bg-[#DDF1FF] dark:bg-[#09090B] dark:text-[#F5F3ED] min-h-screen flex flex-col justify-between overflow-x-hidden text-black font-['roboto_mono']"
->
-    <!-- 你的 Dashboard 內容 -->
-    <h1>Dashboard</h1>
+export const prerender = false;
+
+const supabase = createSupabaseServerClient(Astro.cookies, Astro.request);
+const { data: posts, error } = await supabase
+  .from('posts')
+  .select('id, slug, title, published, created_at')
+  .order('created_at', { ascending: false })
+  .limit(8);
+const user = Astro.locals.user;
+---
+<!doctype html>
+<html lang="zh-Hant">
+<head><BaseHead title="Dashboard" description="This DaoHui Blog Dashboard" /></head>
+<body class="min-h-screen flex flex-col justify-between overflow-x-hidden bg-[#DDF1FF] font-['roboto-mono'] text-black dark:bg-[#09090B] dark:text-[#F5F3ED]">
+  <div class="px-6 py-8 md:px-12">
+    <Header />
+    <main class="mx-auto mt-10 w-full max-w-[1200px]">
+      <div class="mb-8 flex flex-col gap-4 border-b border-black/20 pb-6 sm:flex-row sm:items-end sm:justify-between dark:border-white/20">
+        <div>
+          <p class="mb-3 text-xs uppercase tracking-widest text-[#6600FF]">DAO HUI / ADMIN</p>
+          <h1 class="font-['anton'] text-5xl uppercase sm:text-7xl">Dashboard</h1>
+          <p class="mt-3 text-sm text-neutral-600 dark:text-neutral-400">{user?.email ?? 'Administrator'}</p>
+        </div>
+        <form method="POST" action="/api/auth/logout"><button class="border border-black/30 px-4 py-2 text-xs hover:border-[#6600FF] hover:text-[#6600FF] dark:border-white/30" type="submit">SIGN OUT</button></form>
+      </div>
+      <div class="grid gap-4 sm:grid-cols-3">
+        <a href="/dashboard/posts" class="border border-black/20 p-6 transition hover:border-[#6600FF] dark:border-white/20"><p class="text-xs text-[#6600FF]">01 / CONTENT</p><h2 class="mt-3 font-['anton'] text-2xl">POSTS</h2><p class="mt-2 text-sm">Manage online articles</p></a>
+        <a href="/dashboard/posts/new" class="border border-black/20 p-6 transition hover:border-[#6600FF] dark:border-white/20"><p class="text-xs text-[#6600FF]">02 / CREATE</p><h2 class="mt-3 font-['anton'] text-2xl">NEW POST</h2><p class="mt-2 text-sm">Write and publish</p></a>
+        <a href="/" class="border border-black/20 p-6 transition hover:border-[#6600FF] dark:border-white/20"><p class="text-xs text-[#6600FF]">03 / WEBSITE</p><h2 class="mt-3 font-['anton'] text-2xl">VIEW BLOG</h2><p class="mt-2 text-sm">Return to site</p></a>
+      </div>
+      <section class="mt-12">
+        <div class="mb-4 flex items-end justify-between border-b border-black/20 pb-3 dark:border-white/20"><h2 class="font-['anton'] text-3xl">RECENT POSTS</h2><a href="/dashboard/posts" class="text-xs text-[#6600FF]">VIEW ALL →</a></div>
+        {error ? <p class="py-6 text-sm text-red-600">無法載入文章，請檢查 Supabase 設定與 posts 權限。</p> : posts?.length ? <div class="divide-y divide-black/10 dark:divide-white/10">{posts.map((post) => <div class="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between"><div><h3 class="text-sm font-bold">{post.title}</h3><p class="mt-1 text-xs text-neutral-500">{post.slug}</p></div><div class="flex items-center gap-4"><span class={`text-xs ${post.published ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}>{post.published ? 'PUBLISHED' : 'DRAFT'}</span><a href={`/dashboard/posts/${post.id}`} class="text-xs text-[#6600FF]">EDIT →</a></div></div>)}</div> : <p class="py-8 text-sm text-neutral-500">尚無文章。新增第一篇 Supabase 文章吧。</p>}
+      </section>
+    </main>
+  </div>
+  <Footer />
 </body>
+</html>

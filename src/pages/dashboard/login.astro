@@ -1,0 +1,48 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import '@fontsource/anton';
+import '@fontsource/roboto-mono';
+import '@fontsource/cormorant-garamond';
+
+export const prerender = false;
+
+const error = Astro.url.searchParams.get('error');
+const messages: Record<string, string> = {
+  missing_credentials: '請輸入電子郵件與密碼。',
+  invalid_credentials: '登入失敗，請檢查帳號密碼。',
+  missing_oauth_code: 'GitHub 登入沒有回傳授權碼。',
+  login_failed: '無法取得登入帳號。',
+  oauth_callback_failed: 'GitHub OAuth 驗證失敗，請重試。',
+};
+---
+<!doctype html>
+<html lang="zh-Hant">
+  <head><BaseHead title="Dashboard Login" description="Sign in to DaoHui Blog Dashboard" /></head>
+  <body class="min-h-screen flex flex-col justify-between overflow-x-hidden bg-[#DDF1FF] font-['roboto-mono'] text-black dark:bg-[#09090B] dark:text-[#F5F3ED]">
+    <div class="px-6 py-8 md:px-12">
+      <Header />
+      <main class="mx-auto mt-16 w-full max-w-lg">
+        <p class="mb-3 text-xs tracking-widest text-[#6600FF]">DAO HUI / ADMIN ACCESS</p>
+        <h1 class="font-['anton'] text-5xl uppercase sm:text-7xl">Sign In</h1>
+        <p class="mt-4 text-sm text-neutral-600 dark:text-neutral-400">Sign in with your authorized administrator account.</p>
+        {error && <p role="alert" class="mt-6 border border-red-500/40 p-3 text-sm text-red-600">{messages[error] ?? '登入發生錯誤，請重試。'}</p>}
+        <form method="POST" action="/api/auth/login" class="mt-8 space-y-5">
+          <label class="block text-xs uppercase tracking-wider">
+            Email
+            <input name="email" type="email" required autocomplete="username" class="mt-2 w-full border border-black/20 bg-transparent px-4 py-3 outline-none focus:border-[#6600FF] dark:border-white/20" />
+          </label>
+          <label class="block text-xs uppercase tracking-wider">
+            Password
+            <input name="password" type="password" required autocomplete="current-password" class="mt-2 w-full border border-black/20 bg-transparent px-4 py-3 outline-none focus:border-[#6600FF] dark:border-white/20" />
+          </label>
+          <button type="submit" class="w-full bg-[#6600FF] px-5 py-3 text-sm font-bold text-white transition hover:bg-black">SIGN IN WITH EMAIL →</button>
+        </form>
+        <div class="my-6 flex items-center gap-4 text-xs text-neutral-500"><span class="h-px flex-1 bg-black/20 dark:bg-white/20"></span>OR<span class="h-px flex-1 bg-black/20 dark:bg-white/20"></span></div>
+        <a href="/api/auth/github" class="block w-full border border-black/30 px-5 py-3 text-center text-sm font-bold transition hover:border-[#6600FF] hover:text-[#6600FF] dark:border-white/30">CONTINUE WITH GITHUB ↗</a>
+      </main>
+    </div>
+    <Footer />
+  </body>
+</html>

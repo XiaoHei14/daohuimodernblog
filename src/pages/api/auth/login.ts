@@ -1,41 +1,32 @@
-
 import type { APIRoute } from "astro";
 import { createSupabaseServerClient } from "../../../lib/supabase-server";
 
-export const POST: APIRoute = async ({
-  request,
-  cookies,
-  redirect,
-}) => {
-  try {
-    const form = await request.formData();
+export const prerender = false;
 
-    const email = String(form.get("email") ?? "").trim();
-    const password = String(form.get("password") ?? "");
+export const POST: APIRoute = async ({ cookies, request, redirect }) => {
+  const form = await request.formData();
+  const email = String(form.get("email") ?? "").trim();
+  const password = String(form.get("password") ?? "");
 
-    if (!email || !password) {
-      return new Response("Email and password are required", {
-        status: 400,
-      });
-    }
+  if (!email || !password) {
+    return redirect("/dashboard/login?error=missing_credentials", 303);
+  }
 
-    const supabase = createSupabaseServerClient(cookies, request);
+  const supabase = createSupabaseServerClient(cookies, request);
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+  if (error) {
+    return redirect("/dashboard/login?error=invalid_credentials", 303);
+  }
 
-    if (error) {
-      return redirect("/dashboard/login?error=credentials", 303);
-    }
-
-    return redirect("/dashboard", 303);
-  } catch (error) {
-    console.error("Login API error:", error);
-
-    return new Response("Internal Server Error", {
-      status: 500,
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user?.app_metadata?.is_super_admin !== true) {
+    await supabase.auth.signOut();
+    return new Response("403 Forbidden — this account is not a super-admin.", {
+      status: 403,
+      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
     });
   }
+
+  return redirect("/dashboard", 303);
 };
